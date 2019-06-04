@@ -1,0 +1,3 @@
+[submodule "MTCLWrapper"]
+	path = MTCLWrapper
+	url = git@mlabgit.meitu.com:SHLeagues/Meitu-3A/MTCLWrapper.git
