@@ -5,12 +5,14 @@
 #include <iostream>
 #include <algorithm>
 #include "ImgProc.h"
+#include "MTBasicTimer.h"
 
 #include "CLEvent.h"
 #include "CLBuffer.h"
 #include "CLUtility.h"
 #include "CLContext.h"
 #include "CLProgram.h"
+
 #include "opencv/cv.h"
 #include "opencv/cv.hpp"
 #include "opencv2/imgcodecs.hpp"
@@ -46,6 +48,7 @@ void BuildGammaTable(uchar lut[], const size_t len, const float factor)
 
 bool GammaMap(Program &program, Buffer<uchar> &input, Buffer<uchar> &output, Buffer<uchar> &gammaBuffer)
 {
+    
     bool ret = true;
 
     size_t blockW = 0;
@@ -56,7 +59,6 @@ bool GammaMap(Program &program, Buffer<uchar> &input, Buffer<uchar> &output, Buf
     Kernel<void(uchar*, uchar*, uchar*, int, int)> copyMem = program.getKernel<void(uchar*, uchar*, uchar*, int, int)>("GammaMap");
     copyMem(Worksize(blockW, srcH, 4, 4), input, output, gammaBuffer, srcH, srcW, ret);
     CheckFuncStatus("GammaMap", ret);
-
     return ret;
 }
 
@@ -67,12 +69,12 @@ int main()
 //    cl_device_id device = m_context->getDevice();
 //    m_context->GetDeviceInfo(device);
     Program* m_program = new Program(*m_context);
-    char clPath[] = "/Users/meitu/git/LearnOpenCL/oclDemo.cl";
+    char clPath[] = "/Users/meitu/git/LearnOpenCL/src/opencl/oclDemo.cl";
     LOGI("clPath = %s\n", clPath);
     char flags[] = "-cl-unsafe-math-optimizations -cl-mad-enable";
     m_program->buildCLScripWithSource(clPath, flags, false);
 
-    Mat rgb = cv::imread("/Users/meitu/git/LearnOpenCL/test.jpg");
+    Mat rgb = cv::imread("/Users/meitu/git/LearnOpenCL/imgs/test.jpg");
     int width = rgb.cols, height = rgb.rows;
     if (rgb.empty())
     {
@@ -102,8 +104,12 @@ int main()
 
         Buffer<uchar> outputImg(*m_context, width, height, ret);
         CheckFuncStatus("create opoencl buffer outputImg", ret);
+        
+        MTBasicTimer timer;
         ret = GammaMap(*m_program, inputImg, outputImg, gammaBuffer);
         CheckFuncStatus("run GammaMap kernel function", ret);
+        Event::flush(m_context->getQueue());
+        LOGD("%s[%d]: CameraRaw denoise and sharp is finished timer count = %lf!\n", __FUNCTION__, __LINE__, timer.GetTimerCount());
         // 读buffer到本地
         Event runKernel = outputImg.read(gray.data, ret);
         runKernel.wait();
