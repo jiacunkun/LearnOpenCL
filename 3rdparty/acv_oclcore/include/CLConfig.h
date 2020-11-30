@@ -1,0 +1,19 @@
+#ifndef __ACV_OCL_CONFIGURATION_H__
+#define __ACV_OCL_CONFIGURATION_H__
+
+#define ACV_OCLCORE_MAJOR_VERSION (1)
+#define ACV_OCLCORE_MINOR_VERSION (3)
+#define ACV_OCLCORE_PATCH_VERSION (0)
+#define ACV_OCLCORE_VERSION_STRING "1.3.0"
+
+#define DYNAMIC_LOADING_OCLLIB
+
+#define HAVE_ACVCORE
+
+
+
+#include "ocl_def.h"
+
+#endif // __ACV_OCL_CONFIGURATION_H__
+
+
