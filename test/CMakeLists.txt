@@ -20,6 +20,7 @@ include_directories(
         ${libmpbase_INCLUDE_DIRS}
         ./
         ${CMAKE_SOURCE_DIR}/src/SimpleResize/
+        ${CMAKE_SOURCE_DIR}/src/pyramidNLM/
 )
 
 

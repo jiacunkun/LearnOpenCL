@@ -12,7 +12,7 @@ if(MSVC)
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
         set(_ROOT "${_ROOT}/lib/vs2019_win32/")
     else("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-        set(_ROOT "${_ROOT}/lib/vs2019_win64/")
+        set(_ROOT "${_ROOT}/lib/vs2017_win64/")
     endif("${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
     # debug properties
     add_library(acv_oclcore SHARED IMPORTED)

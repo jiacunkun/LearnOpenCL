@@ -3,7 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
+#include "mobilecv.h"
+#include "imgpyramid.h"
 
 using namespace std;
 
@@ -44,7 +45,29 @@ int main(int argc, char* argv[])
 	img.pi32Pitch[0] = width;
 	img.ppu8Plane[0] = &buffer[0];
 
+#if 1
+    MHandle hMemMgr = MNull;
+    MHandle mcvParallelMonitor = MNull;
+    mcvParallelMonitor = mcvParallelInit(hMemMgr, 16);
+    if (mcvParallelMonitor == 0)
+    {
+        printf("Failed to start parallel engine!!\n");
+        return -1;
+    }
+
+    ImgPyramidDenoise_Block_NLM(hMemMgr, mcvParallelMonitor, &img, &img,
+                                            10, 1);
+
+    if (mcvParallelMonitor)
+    {
+        if (mcvParallelUninit(mcvParallelMonitor) < 0)
+        {
+            return -1;
+        }
+    }
+#else
 	EX_Process(EX_handle, &img);
+#endif
 
 	EX_Uninit(&EX_handle);
 
