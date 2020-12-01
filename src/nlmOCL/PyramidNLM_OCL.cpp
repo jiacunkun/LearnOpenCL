@@ -69,6 +69,42 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return true;
         }
 
+        bool PyramidNLM_OCL::run(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, float fNoiseVarY, float fNoiseVarUV)
+        {
+            bool bRet = true;
+
+            // 创建GPU内存
+            acv::Mat y_mat(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[0], pSrc->pi32Pitch[0]); // set pointer to a Mat
+            acv::Mat uv_mat(pSrc->i32Height/2, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[1], pSrc->pi32Pitch[1]); // set pointer to a Mat
+            acv::ocl::CLMat y_clmat;
+            acv::ocl::CLMat uv_clmat;
+            if (y_clmat.is_svm_available()) // an eample to use SVM buffer
+            {
+                y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
+                uv_clmat.create_with_svm(pSrc->i32Height/2, pSrc->i32Width, ACV_8UC1);
+            }
+            else
+            {
+                y_clmat.create_with_clmem(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
+                uv_clmat.create_with_clmem(pSrc->i32Height/2, pSrc->i32Width, ACV_8UC1);
+            }
+
+            // 将CPU数据拷到GPU
+            bRet = y_clmat.copyFrom(y_mat);
+            bRet &= uv_clmat.copyFrom(uv_mat);
+
+            // run GPU
+            bRet &= run(y_clmat, uv_clmat, y_clmat, uv_clmat, fNoiseVarY, fNoiseVarUV);
+
+            // 将GPU结果考到CPU
+            acv::Mat y_dst_mat(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[0], pSrc->pi32Pitch[0]); // create a buffer on the host
+            bRet &= y_clmat.copyTo(y_dst_mat); // copy the result to the host
+            acv::Mat uv_dst_mat(pSrc->i32Height/2, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[1], pSrc->pi32Pitch[1]); // create a buffer on the host
+            bRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
+
+            return bRet;
+        }
+
         bool PyramidNLM_OCL::run(CLMat &srcY, CLMat &srcUV, CLMat& dstY, CLMat& dstUV, float fNoiseVarY, float fNoiseVarUV)
         {
             bool bRet = true;
@@ -76,7 +112,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             // 对Y通道进行处理
             bRet = run(srcY, dstY, fNoiseVarY, false);
 
-            // 对Y通道进行处理
+            // 对UV通道进行处理
             CLMat u, v;
             if (u.is_svm_available()) // an eample to use SVM buffer
             {
@@ -98,6 +134,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::run(CLMat &src, CLMat &dst, float fNoiseVar, bool bIsDenoiseFor0)
         {
+            MFloat fPow[] = {1.0, 0.5, 0.25, 0.125, 0.0625};
             bool bRet = true;
 
             int nStep = src.stride(0);
@@ -116,7 +153,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             // 从小到大逐层降噪
             for (int i = nLayer-1; i > 0; i--)
             {
-                bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i]);
+                float fTmpVar = fNoiseVar * fPow[i];;
+                fTmpVar = MAX(1.0f, fTmpVar);
+
+                bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
                 bRet &= ImageSubImage(m_DenoiseImg[i], m_PyrDownImg[i]);
                 bRet &= PyramidUp(m_DenoiseImg[i], m_DenoiseImg[i-1]);
                 bRet &= ImageAddImage(m_PyrDownImg[i-1], m_DenoiseImg[i-1]);
@@ -127,7 +167,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 int i = 0;
                 if (bIsDenoiseFor0)
                 {
-                    bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i]);
+                    float fTmpVar = fNoiseVar * fPow[i];;
+                    fTmpVar = MAX(1.0f, fTmpVar);
+
+                    bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
                     dst = m_DenoiseImg[0]; // 将结果拷贝给输出
                 }
                 else
@@ -171,7 +214,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return bRet;
         }
 
-        bool PyramidNLM_OCL::NLMDenoise(CLMat &src, CLMat& dst)
+        bool PyramidNLM_OCL::NLMDenoise(CLMat &src, CLMat& dst, float fNoiseVar)
         {
             bool bRet = true;
             return bRet;
