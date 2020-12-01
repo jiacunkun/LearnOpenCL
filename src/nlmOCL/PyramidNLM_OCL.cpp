@@ -1,4 +1,4 @@
-#include "PyramidNLM_ocl.h"
+#include "PyramidNLM_OCL.h"
 #include "GlobalKernelsHolder.h"
 #include "CLMat.h"
 #include "CLlogger.h"
@@ -16,18 +16,18 @@
 #endif
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
-        PyramidNLM_ocl::PyramidNLM_ocl()
+        PyramidNLM_OCL::PyramidNLM_OCL()
         {
 
         }
 
-        PyramidNLM_ocl::~PyramidNLM_ocl()
+        PyramidNLM_OCL::~PyramidNLM_OCL()
         {
 
         }
 
 
-        bool PyramidNLM_ocl::create(const CLContext& context, ProgramSourceType type)
+        bool PyramidNLM_OCL::create(const CLContext& context, ProgramSourceType type)
         {
             const char* source_file_path = GlobalKernelsHolder::getProgramSourceFilePath();
             const char* options = nullptr;
@@ -41,14 +41,14 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return true;
         }
 
-        CLKernel& PyramidNLM_ocl::getKernelOfNLM(int n) // a help function to get a specifical kernel
+        CLKernel& PyramidNLM_OCL::getKernelOfNLM(int n) // a help function to get a specifical kernel
         {
             static int index = -1;
             if (index == -1) index = n;
             return GlobalKernelsHolder::getKernel(index);
         }
 
-        bool PyramidNLM_ocl::initBuffer(int nWidth, int nHeight, int nStep, int nLayer)
+        bool PyramidNLM_OCL::initBuffer(int nWidth, int nHeight, int nStep, int nLayer)
         {
             for (int i = 0; i < nLayer; i++)
             {
@@ -69,7 +69,34 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return true;
         }
 
-        bool PyramidNLM_ocl::run(CLMat &src, CLMat &dst, float fNoiseVar, bool is_blocking)
+        bool PyramidNLM_OCL::run(CLMat &srcY, CLMat &srcUV, CLMat& dstY, CLMat& dstUV, float fNoiseVarY, float fNoiseVarUV)
+        {
+            bool bRet = true;
+
+            // 对Y通道进行处理
+            bRet = run(srcY, dstY, fNoiseVarY, false);
+
+            // 对Y通道进行处理
+            CLMat u, v;
+            if (u.is_svm_available()) // an eample to use SVM buffer
+            {
+                u.create_with_svm(srcUV.height(), srcUV.width()/2, ACV_8UC1);
+                v.create_with_svm(srcUV.height(), srcUV.width()/2, ACV_8UC1);
+            }
+            else
+            {
+                u.create_with_clmem(srcUV.height(), srcUV.width()/2, ACV_8UC1);
+                v.create_with_clmem(srcUV.height(), srcUV.width()/2, ACV_8UC1);
+            }
+            bRet &= SplitNV21Channel(srcUV, u, v);
+            bRet &= run(u, u, fNoiseVarUV, true);
+            bRet &= run(v, v, fNoiseVarUV, true);
+            bRet &= MergeNV21Channel(u, v, srcUV);
+
+            return bRet;
+        }
+
+        bool PyramidNLM_OCL::run(CLMat &src, CLMat &dst, float fNoiseVar, bool bIsDenoiseFor0)
         {
             bool bRet = true;
 
@@ -96,7 +123,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             }
 
             // 最大层特殊处理
-            bool bIsDenoiseFor0 = true;
             {
                 int i = 0;
                 if (bIsDenoiseFor0)
@@ -105,10 +131,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 }
             }
 
+            dst = m_DenoiseImg[0]; // 将结果拷贝给输出
+
             return bRet;
         }
 
-        bool PyramidNLM_ocl::resize_8uc1(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking) // the main function to call the kernel
+        bool PyramidNLM_OCL::resize_8uc1(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking) // the main function to call the kernel
         {
             int src_step = src.stride(0);
             int src_cols = src.cols();
@@ -126,13 +154,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return kernel.run(dims, global_size, local_size, is_blocking); // run the kernel
         }
 
-        bool PyramidNLM_ocl::PyramidDown(CLMat &src, CLMat& dst)
+        bool PyramidNLM_OCL::PyramidDown(CLMat &src, CLMat& dst)
         {
             bool bRet = true;
             return bRet;
         }
 
-        bool PyramidNLM_ocl::PyramidUp(CLMat &src, CLMat& dst)
+        bool PyramidNLM_OCL::PyramidUp(CLMat &src, CLMat& dst)
         {
             bool bRet = true;
             return bRet;

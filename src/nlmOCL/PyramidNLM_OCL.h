@@ -9,15 +9,16 @@
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
-class PyramidNLM_ocl : public GlobalKernelsHolder
+class PyramidNLM_OCL : public GlobalKernelsHolder
 {
 public:
-    PyramidNLM_ocl();
-    ~PyramidNLM_ocl();
+    PyramidNLM_OCL();
+    ~PyramidNLM_OCL();
 
     virtual bool create(const CLContext& context, ProgramSourceType type);
     bool initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
-    bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool is_blocking = false);
+    bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
+    bool run(CLMat &srcY, CLMat &srcUV, CLMat& dstY, CLMat& dstUV, float fNoiseVarY, float fNoiseVarUV);
 
 private:
     bool PyramidUp(CLMat &src, CLMat& dst);
@@ -25,6 +26,8 @@ private:
     bool NLMDenoise(CLMat &src, CLMat& dst);
     bool ImageSubImage(CLMat &srcDst, CLMat& src);
     bool ImageAddImage(CLMat &srcDst, CLMat& src);
+    bool SplitNV21Channel(CLMat &uv, CLMat& u, CLMat& v);
+    bool MergeNV21Channel(CLMat& u, CLMat& v, CLMat &uv);
 
 private:
     CLKernel& getKernelOfNLM(int n = 0);
