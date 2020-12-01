@@ -128,10 +128,15 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 if (bIsDenoiseFor0)
                 {
                     bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i]);
+                    dst = m_DenoiseImg[0]; // 将结果拷贝给输出
+                }
+                else
+                {
+                    dst = m_PyrDownImg[0];
                 }
             }
 
-            dst = m_DenoiseImg[0]; // 将结果拷贝给输出
+
 
             return bRet;
         }
