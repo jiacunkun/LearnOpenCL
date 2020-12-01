@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 	img.pi32Pitch[0] = width;
 	img.ppu8Plane[0] = &buffer[0];
 
-#if 1
+#if 0
     MHandle hMemMgr = MNull;
     MHandle mcvParallelMonitor = MNull;
     mcvParallelMonitor = mcvParallelInit(hMemMgr, 16);

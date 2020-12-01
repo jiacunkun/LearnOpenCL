@@ -18,7 +18,7 @@ namespace acv {
 		public:
 			virtual bool create(const CLContext& context, ProgramSourceType type)
             {
-				const char* source_file_path = getProgramSourceFilePath();
+				const char* source_file_path = GlobalKernelsHolder::getProgramSourceFilePath();
 				const char* options = nullptr;
 				CLProgram program = buildProgramFromFile(context, source_file_path, options, type);
 				if (program.program() == nullptr)

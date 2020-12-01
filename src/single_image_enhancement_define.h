@@ -6,18 +6,10 @@
 
 #define CALCULATE_TIME 1
 
-#if defined(__ANDROID__)||defined(ANDROID)
-#else
-
-#endif
-
-//打开neon
-#define USE_NEON
-
 //命名空间宏定义
-#define NS_SINFLE_IMAGE_ENHANCEMENT_BEGIN   namespace Single_Image_Enhancement_FOR_SR {
-#define NS_SINFLE_IMAGE_ENHANCEMENT_END     }
-#define USING_NS_SINFLE_IMAGE_ENHANCEMENT   using namespace Single_Image_Enhancement_FOR_SR;
+#define NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN   namespace acv { namespace ocl {
+#define NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END     } }
+#define USING_NS_SINFLE_IMAGE_ENHANCEMENT   using namespace acv::ocl;
 
 //定义多线程
 #define MULTI_THREAD
