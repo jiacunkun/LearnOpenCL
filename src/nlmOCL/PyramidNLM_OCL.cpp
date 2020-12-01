@@ -91,7 +91,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bRet &= SplitNV21Channel(srcUV, u, v);
             bRet &= run(u, u, fNoiseVarUV, true);
             bRet &= run(v, v, fNoiseVarUV, true);
-            bRet &= MergeNV21Channel(u, v, srcUV);
+            bRet &= MergeNV21Channel(u, v, dstUV);
 
             return bRet;
         }
@@ -165,4 +165,35 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool bRet = true;
             return bRet;
         }
+
+        bool PyramidNLM_OCL::NLMDenoise(CLMat &src, CLMat& dst)
+        {
+            bool bRet = true;
+            return bRet;
+        }
+
+        bool PyramidNLM_OCL::ImageSubImage(CLMat &srcDst, CLMat& src)
+        {
+            bool bRet = true;
+            return bRet;
+        }
+
+        bool PyramidNLM_OCL::ImageAddImage(CLMat &srcDst, CLMat& src)
+        {
+            bool bRet = true;
+            return bRet;
+        }
+
+        bool PyramidNLM_OCL::SplitNV21Channel(CLMat &uv, CLMat& u, CLMat& v)
+        {
+            bool bRet = true;
+            return bRet;
+        }
+
+        bool PyramidNLM_OCL::MergeNV21Channel(CLMat& u, CLMat& v, CLMat &uv)
+        {
+            bool bRet = true;
+            return bRet;
+        }
+
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END
