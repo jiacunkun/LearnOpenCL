@@ -48,13 +48,13 @@ namespace acv {
 			/** @brief build from source
 			* @param source_str          Program code source
 			* @param options             Options for building program
-			* @param source_str_length   Length of code source. It can be 0, in which case the strings are assumed to be null-terminated¡£
+			* @param source_str_length   Length of code source. It can be 0, in which case the strings are assumed to be null-terminatedã€‚
 			*/
 			bool buildFromSource(const char* source_str, const char* options = NULL, size_t source_str_length = 0);
 			/** @brief build from encrypted source
 			* @param source_str          Encrypted program code source by CLProgram::encrypt
 			* @param options             Options for building program
-			* @param source_str_length   Length of code source. It can be 0, in which case the strings are assumed to be null-terminated¡£
+			* @param source_str_length   Length of code source. It can be 0, in which case the strings are assumed to be null-terminatedã€‚
 			*/
 			bool buildFromEncryptedSource(const char* encrypted_source_str, const char* options = NULL, size_t source_str_length = 0);
 

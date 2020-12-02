@@ -11,7 +11,7 @@
 namespace acv {
 	namespace ocl
 	{
-        
+       
         
 		class SampleResizeOCL : public GlobalKernelsHolder			
         {

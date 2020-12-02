@@ -1,7 +1,6 @@
 #ifndef NLM_OCL_PYRAMIDNLM_OCL_HANDLER_H
 #define NLM_OCL_PYRAMIDNLM_OCL_HANDLER_H
 
-#include <CL/cl.h>
 #include "asvloffscreen.h"
 
 #ifdef __cplusplus

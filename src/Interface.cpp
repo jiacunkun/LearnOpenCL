@@ -138,7 +138,7 @@ MRESULT EX_Process(MHandle handle, LPASVLOFFSCREEN pImg)
 
 
 		rval &= acv::ocl::resize_8uc1(y_clmat, y_dst_clmat); // do resize
-
+        y_clmat.copyTo(y_dst_clmat);
 		acv::Mat dst_mat(pImg->i32Height / 2, pImg->i32Width / 2, ACV_8UC1); // create a buffer on the host
 		rval &= y_dst_clmat.copyTo(dst_mat); // copy the result to the host
 		

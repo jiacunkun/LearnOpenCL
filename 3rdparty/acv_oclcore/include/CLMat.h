@@ -76,10 +76,10 @@ namespace acv {
 
 				int channels()const;
 
-				//£°return  total memory size in bytes
+				//ÔºÅreturn  total memory size in bytes
 				size_t totalMemSize() const;
 
-				//£°return  check wether the memory is continue
+				//ÔºÅreturn  check wether the memory is continue
 				bool isContinueMemory()const;
 
 				//! stride for each demension, steps[i]/elemSize1()

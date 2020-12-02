@@ -2,18 +2,8 @@
 #include "GlobalKernelsHolder.h"
 #include "CLMat.h"
 #include "CLlogger.h"
+#include "ArcsoftLog.h"
 
-#ifdef INITOCL_FROM_SOURCE
-
-#else
-#if WIN32
-#include "windows/program_binary.bin.h"
-#elif ANDROID
-#include "android/program_binary.bin.h"
-#else
-#pragma message( "there is no program_binary.bin.h for this OS" )
-#endif
-#endif
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         PyramidNLM_OCL::PyramidNLM_OCL()
@@ -71,6 +61,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::run(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, float fNoiseVarY, float fNoiseVarUV)
         {
+            LOGD("PyramidNLM_OCL::run++");
             bool bRet = true;
 
             // 创建GPU内存
@@ -102,6 +93,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             acv::Mat uv_dst_mat(pSrc->i32Height/2, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[1], pSrc->pi32Pitch[1]); // create a buffer on the host
             bRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
 
+            LOGD("PyramidNLM_OCL::run--");
             return bRet;
         }
 
@@ -144,7 +136,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             initBuffer(nWidth, nHeight, nStep, nLayer); // 创建空内存
 
             //构建金字塔
-            m_PyrDownImg[0] = src;
+            src.copyTo(m_PyrDownImg[0]);
+
             for (int i = 0; i < nLayer-1; i++)
             {
                 PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i+1]);
@@ -171,11 +164,11 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                     fTmpVar = MAX(1.0f, fTmpVar);
 
                     bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
-                    dst = m_DenoiseImg[0]; // 将结果拷贝给输出
+                    m_DenoiseImg[0].copyTo(dst);// 将结果拷贝给输出
                 }
                 else
                 {
-                    dst = m_PyrDownImg[0];
+                    m_PyrDownImg[0].copyTo(dst);// 将结果拷贝给输出
                 }
             }
 
@@ -205,6 +198,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::PyramidDown(CLMat &src, CLMat& dst)
         {
             bool bRet = true;
+
+            resize_8uc1(src, dst, false);
+
             return bRet;
         }
 
