@@ -2,15 +2,12 @@
 #define NLM_OCL_PYRAMIDNLM_OCL_H
 
 #include "single_image_enhancement_define.h"
-#include "asvloffscreen.h"
-#include "GlobalKernelsHolder.h"
 #include "CLMat.h"
 #include "CLKernel.h"
+#include "GlobalKernelsHolder.h"
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
-
-
 
         class PyramidNLM_OCL : public GlobalKernelsHolder
         {
@@ -19,10 +16,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             ~PyramidNLM_OCL();
 
             virtual bool create(const CLContext& context, ProgramSourceType type);
-            bool initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
+            void initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
             bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
-            bool run(CLMat &srcY, CLMat &srcUV, CLMat& dstY, CLMat& dstUV, float fNoiseVarY, float fNoiseVarUV);
-            bool run(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, float fNoiseVarY, float fNoiseVarUV);
+            bool runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
         private:
             bool PyramidUp(CLMat &src, CLMat& dst);
@@ -44,6 +40,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类
+
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END
 #endif //NLM_OCL_PYRAMIDNLM_OCL_H

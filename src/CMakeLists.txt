@@ -32,13 +32,15 @@ include("${CMAKE_SOURCE_DIR}/cmake/libacv_oclcore-config.cmake")
 file(GLOB SRC *.cpp *.h)
 file(GLOB SRC_NLM_OCL nlmOCL/*.cpp nlmOCL/*.h)
 file(GLOB SRC_NLM pyramidNLM/*.cpp pyramidNLM/*.h)
-file(GLOB SRC_GUIDED guidedFilter/*.cpp guidedFilter/*.h)
+file(GLOB SRC_COMMON common/*.cpp common/*.h)
+
 
 set(SOURCE_FILES
         ${SRC}
 #        ${SRC_NLM}
 #        ${SRC_GUIDED}
         ${SRC_NLM_OCL}
+        ${SRC_COMMON}
         )
 
 # 在编译一个target的时候并不需要头文件列表, 但是在开发中我们希望它们出现
@@ -61,6 +63,7 @@ include_directories(
         pyramidNLM/
         guidedFilter/
         nlmOCL/
+        common/
 )
 
 # 创建我们的算法库, 用上之前我们定义的 `LIBRARY_NAME` 防止硬编码

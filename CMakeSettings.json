@@ -3,7 +3,7 @@
     {
       "name": "x64-Release",
       "generator": "Ninja",
-      "configurationType": "Debug",
+      "configurationType": "Release",
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
@@ -13,6 +13,11 @@
       "variables": [
         {
           "name": "TEST_APPS",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "OPEN_LOG",
           "value": "True",
           "type": "BOOL"
         }

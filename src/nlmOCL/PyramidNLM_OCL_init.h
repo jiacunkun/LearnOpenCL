@@ -4,7 +4,7 @@
 #include "CLInitailizerAuxi.h"
 #include "PyramidNLM_OCL.h"
 
-#define INITOCL_FROM_SOURCE
+//#define INITOCL_FROM_SOURCE
 
 #ifdef INITOCL_FROM_SOURCE
 
