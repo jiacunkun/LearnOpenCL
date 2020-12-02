@@ -10,7 +10,7 @@
 
 
 #else
-#if defined(_WIN64)
+#if defined(_WIN64) || defined(_WIN32)
 #include "windows/program_binary.bin.h"
 #elif ANDROID
 #include "android/program_binary.bin.h"
