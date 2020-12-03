@@ -92,11 +92,55 @@ kernel void MergeNV21Channel
    	int x = get_global_id(0);
 	int y = get_global_id(1);
 
-	
 	uvDst[y*dst_step + x*2] = uSrc[y*src_step + x];
 	uvDst[y*dst_step + x*2 + 1] = uSrc[y*src_step + x];
-	
-	
-
 }
 
+
+kernel void ImageSubImage
+(
+	global unsigned char *srcDst, 
+	int src_step,
+	int src_cols,
+	int src_rows,
+	global unsigned char *src, 
+	int dst_step,
+	int dst_cols,
+	int dst_rows
+)
+{
+    //获取当前图像行和列
+   	int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	int srcDstVal = srcDst[y*src_step + x];
+	int srcVal = src[y*dst_step + x];
+	srcDstVal = srcDstVal - srcVal + 128;
+	srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
+	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
+	srcDst[y*src_step + x] = srcDstVal;
+}
+
+kernel void ImageAddImage
+(
+	global unsigned char *srcDst, 
+	int src_step,
+	int src_cols,
+	int src_rows,
+	global unsigned char *src, 
+	int dst_step,
+	int dst_cols,
+	int dst_rows
+)
+{
+    //获取当前图像行和列
+   	int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	int srcDstVal = srcDst[y*src_step + x];
+	int srcVal = src[y*dst_step + x];
+	srcDstVal = srcDstVal + srcVal - 128;
+	srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
+	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
+	srcDst[y*src_step + x] = srcDstVal;
+}

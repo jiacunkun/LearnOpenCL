@@ -33,10 +33,17 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             getKernelOfResize(nIndex);  // insert an kernel to the global kernel holder              
 
             nIndex = insertKernel(m_Program, "SplitNV21Channel");
-            getKernelOfSplitNV21Channel(nIndex);  // insert an kernel to the global kernel holder
+            getKernelOfSplitNV21Channel(nIndex);  
 
             nIndex = insertKernel(m_Program, "MergeNV21Channel");
-            getKernelOfMergeNV21Channel(nIndex);  // insert an kernel to the global kernel holder
+            getKernelOfMergeNV21Channel(nIndex);  
+
+            nIndex = insertKernel(m_Program, "ImageSubImage");
+            getKernelOfImageSubImage(nIndex);
+
+            nIndex = insertKernel(m_Program, "ImageAddImage");
+            getKernelOfImageAddImage(nIndex);
+
             return true;
         }
 
@@ -55,6 +62,20 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         }
 
         CLKernel& PyramidNLM_OCL::getKernelOfMergeNV21Channel(int n) // a help function to get a specifical kernel
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfImageSubImage(int n)
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfImageAddImage(int n)
         {
             static int index = -1;
             if (index == -1) index = n;
@@ -200,9 +221,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             bool bRet = true;
 
-            Resize(src, dst, m_bIsBlocking);
+            bRet = Resize(src, dst, m_bIsBlocking);
 
             //Mat tmp = dst.map();
+            //dst.unmap()
 
             return bRet;
         }
@@ -210,6 +232,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::PyramidUp(CLMat& src, CLMat& dst)
         {
             bool bRet = true;
+
+            bRet = Resize(src, dst, m_bIsBlocking);
+
+            //Mat tmp = dst.map();
+            //dst.unmap()
+
             return bRet;
         }
 
@@ -222,12 +250,44 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::ImageSubImage(CLMat& srcDst, CLMat& src)
         {
             bool bRet = true;
+
+            int src_step = srcDst.stride(0);
+            int src_cols = srcDst.cols();
+            int src_rows = srcDst.rows();
+            int dst_step = src.stride(0);
+            int dst_cols = src.cols();
+            int dst_rows = src.rows();
+
+            CLKernel& kernel = getKernelOfImageSubImage(0);
+            kernel.Args(srcDst, src_step, src_cols, src_rows, src, dst_step, dst_cols, dst_rows); // set argument
+            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
             return bRet;
         }
 
         bool PyramidNLM_OCL::ImageAddImage(CLMat& srcDst, CLMat& src)
         {
             bool bRet = true;
+
+            int src_step = srcDst.stride(0);
+            int src_cols = srcDst.cols();
+            int src_rows = srcDst.rows();
+            int dst_step = src.stride(0);
+            int dst_cols = src.cols();
+            int dst_rows = src.rows();
+
+            CLKernel& kernel = getKernelOfImageAddImage(0);
+            kernel.Args(srcDst, src_step, src_cols, src_rows, src, dst_step, dst_cols, dst_rows); // set argument
+            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
             return bRet;
         }
 
@@ -279,13 +339,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            Mat tmp = uv.map();
-            Mat tmpU = u.map();
-            Mat tmpV = v.map();
-
-            uv.unmap();
-            u.unmap();
-            v.unmap();
+            //Mat tmp = uv.map();
+            //Mat tmpU = u.map();
+            //Mat tmpV = v.map();
+            //uv.unmap();
+            //u.unmap();
+            //v.unmap();
 
             return bRet;
         }

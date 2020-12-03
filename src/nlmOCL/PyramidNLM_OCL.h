@@ -27,7 +27,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool ImageSubImage(CLMat &srcDst, CLMat& src);
             bool ImageAddImage(CLMat &srcDst, CLMat& src);
 
-
         private:
             bool Resize(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking = false); // the main function to call the kernel
             bool SplitNV21Channel(CLMat &uv, CLMat& u, CLMat& v);
@@ -37,6 +36,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLKernel& getKernelOfResize(int n);
             CLKernel& getKernelOfSplitNV21Channel(int n);
             CLKernel& getKernelOfMergeNV21Channel(int n);
+            CLKernel& getKernelOfImageSubImage(int n);
+            CLKernel& getKernelOfImageAddImage(int n);
 
         private:
             CLProgram m_Program;
