@@ -1,47 +1,3 @@
-kernel void SplitNV21Channel
-(
-	const global unsigned char *uvSrc,
-	int src_step,
-	int src_cols,
-	int src_rows,
-	global unsigned char *uDst,
-	global unsigned char *vDst,
-	int dst_step,
-	int dst_cols,
-	int dst_rows
-)
-{
-    //获取当前图像行和列
-    int x = get_global_id(0);
-	int y = get_global_id(1);
-
-	uDst[y*dst_step + x] = uvSrc[y*src_step + 2*x];
-	vDst[y*dst_step + x] = uvSrc[y*src_step + 2*x + 1];
-	
-}
-
-
-kernel void MergeNV21Channel
-(
-	global const unsigned char *uSrc, 
-	global const unsigned char *vSrc, 
-	int src_step,
-	int src_cols,
-	int src_rows,
-	global unsigned char *uvDst, 
-	int dst_step,
-	int dst_cols,
-	int dst_rows
-)
-{
-    //获取当前图像行和列
-   	int x = get_global_id(0);
-	int y = get_global_id(1);
-
-
-
-}
-
 kernel void Resize
 (
 	const global unsigned char *src,
@@ -95,5 +51,52 @@ kernel void Resize
 	float a0 = dot(A00, v_alpha);
 	float a1 = dot(A10, v_alpha);
 	dst[y*dst_step + x] = (unsigned char)(a0 + (a1 - a0) * beta);
+}
+
+kernel void SplitNV21Channel
+(
+	const global unsigned char *uvSrc,
+	int src_step,
+	int src_cols,
+	int src_rows,
+	global unsigned char *uDst,
+	global unsigned char *vDst,
+	int dst_step,
+	int dst_cols,
+	int dst_rows
+)
+{
+    //获取当前图像行和列
+    int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	uDst[y*dst_step + x] = uvSrc[y*src_step + 2*x];
+	vDst[y*dst_step + x] = uvSrc[y*src_step + 2*x + 1];
+}
+
+
+kernel void MergeNV21Channel
+(
+	global const unsigned char *uSrc, 
+	global const unsigned char *vSrc, 
+	int src_step,
+	int src_cols,
+	int src_rows,
+	global unsigned char *uvDst, 
+	int dst_step,
+	int dst_cols,
+	int dst_rows
+)
+{
+    //获取当前图像行和列
+   	int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	
+	uvDst[y*dst_step + x*2] = uSrc[y*src_step + x];
+	uvDst[y*dst_step + x*2 + 1] = uSrc[y*src_step + x];
+	
+	
+
 }
 

@@ -25,7 +25,7 @@ namespace acv {
 				{
 					return false;
 				}
-                getKernelOfresize_8uc1(insertKernel(program, "resize_8uc1"));  // insert an kernel to the global kernel holder
+                getKernelOfresize_8uc1(insertKernel(program, "Resize"));  // insert an kernel to the global kernel holder
 
 				return true;
 			}

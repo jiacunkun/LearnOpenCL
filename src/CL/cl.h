@@ -891,28 +891,28 @@ clCreateProgramWithIL(cl_context    /* context */,
 
 
 extern CL_API_ENTRY cl_int CL_API_CALL
-clRetainProgram(cl_program /* program */) CL_API_SUFFIX__VERSION_1_0;
+clRetainProgram(cl_program /* m_Program */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
-clReleaseProgram(cl_program /* program */) CL_API_SUFFIX__VERSION_1_0;
+clReleaseProgram(cl_program /* m_Program */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
-clBuildProgram(cl_program           /* program */,
+clBuildProgram(cl_program           /* m_Program */,
                cl_uint              /* num_devices */,
                const cl_device_id * /* device_list */,
                const char *         /* options */, 
-               void (CL_CALLBACK *  /* pfn_notify */)(cl_program /* program */, void * /* user_data */),
+               void (CL_CALLBACK *  /* pfn_notify */)(cl_program /* m_Program */, void * /* user_data */),
                void *               /* user_data */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
-clCompileProgram(cl_program           /* program */,
+clCompileProgram(cl_program           /* m_Program */,
                  cl_uint              /* num_devices */,
                  const cl_device_id * /* device_list */,
                  const char *         /* options */, 
                  cl_uint              /* num_input_headers */,
                  const cl_program *   /* input_headers */,
                  const char **        /* header_include_names */,
-                 void (CL_CALLBACK *  /* pfn_notify */)(cl_program /* program */, void * /* user_data */),
+                 void (CL_CALLBACK *  /* pfn_notify */)(cl_program /* m_Program */, void * /* user_data */),
                  void *               /* user_data */) CL_API_SUFFIX__VERSION_1_2;
 
 extern CL_API_ENTRY cl_program CL_API_CALL
@@ -922,7 +922,7 @@ clLinkProgram(cl_context           /* context */,
               const char *         /* options */, 
               cl_uint              /* num_input_programs */,
               const cl_program *   /* input_programs */,
-              void (CL_CALLBACK *  /* pfn_notify */)(cl_program /* program */, void * /* user_data */),
+              void (CL_CALLBACK *  /* pfn_notify */)(cl_program /* m_Program */, void * /* user_data */),
               void *               /* user_data */,
               cl_int *             /* errcode_ret */ ) CL_API_SUFFIX__VERSION_1_2;
 
@@ -931,14 +931,14 @@ extern CL_API_ENTRY cl_int CL_API_CALL
 clUnloadPlatformCompiler(cl_platform_id /* platform */) CL_API_SUFFIX__VERSION_1_2;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
-clGetProgramInfo(cl_program         /* program */,
+clGetProgramInfo(cl_program         /* m_Program */,
                  cl_program_info    /* param_name */,
                  size_t             /* param_value_size */,
                  void *             /* param_value */,
                  size_t *           /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
-clGetProgramBuildInfo(cl_program            /* program */,
+clGetProgramBuildInfo(cl_program            /* m_Program */,
                       cl_device_id          /* device */,
                       cl_program_build_info /* param_name */,
                       size_t                /* param_value_size */,
@@ -947,12 +947,12 @@ clGetProgramBuildInfo(cl_program            /* program */,
                             
 /* Kernel Object APIs */
 extern CL_API_ENTRY cl_kernel CL_API_CALL
-clCreateKernel(cl_program      /* program */,
+clCreateKernel(cl_program      /* m_Program */,
                const char *    /* kernel_name */,
                cl_int *        /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
-clCreateKernelsInProgram(cl_program     /* program */,
+clCreateKernelsInProgram(cl_program     /* m_Program */,
                          cl_uint        /* num_kernels */,
                          cl_kernel *    /* kernels */,
                          cl_uint *      /* num_kernels_ret */) CL_API_SUFFIX__VERSION_1_0;

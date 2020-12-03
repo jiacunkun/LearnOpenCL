@@ -26,22 +26,29 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool NLMDenoise(CLMat &src, CLMat& dst, float fNoiseVar);
             bool ImageSubImage(CLMat &srcDst, CLMat& src);
             bool ImageAddImage(CLMat &srcDst, CLMat& src);
+
+
+        private:
+            bool Resize(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking = false); // the main function to call the kernel
             bool SplitNV21Channel(CLMat &uv, CLMat& u, CLMat& v);
             bool MergeNV21Channel(CLMat& u, CLMat& v, CLMat &uv);
 
         private:
-            CLKernel& getKernelOfNLM(int n = 0);
-            bool resize_8uc1(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking = false); // the main function to call the kernel
+            CLKernel& getKernelOfResize(int n);
+            CLKernel& getKernelOfSplitNV21Channel(int n);
+            CLKernel& getKernelOfMergeNV21Channel(int n);
 
         private:
-            CLProgram program;
-
+            CLProgram m_Program;
+            
             CLMat m_PyrDownImg[4];
             CLMat m_DenoiseImg[4];
             CLMat m_TempImg[4];
             int m_nWidth = 0;
             int m_nHeight = 0;
             int m_nStep = 0;
+
+            bool m_bIsBlocking = true;
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类

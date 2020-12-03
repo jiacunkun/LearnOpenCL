@@ -17,24 +17,44 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         }
 
+       
 
         bool PyramidNLM_OCL::create(const CLContext& context, ProgramSourceType type)
         {
             const char* source_file_path = GlobalKernelsHolder::getProgramSourceFilePath();
             const char* options = nullptr;
-            program = buildProgramFromFile(context, source_file_path, options, type);
-            if (program.program() == nullptr)
+            m_Program = buildProgramFromFile(context, source_file_path, options, type);
+            if (m_Program.program() == nullptr)
             {
                 return false;
             }
 
-            //int nIndex = insertKernel(program, "Resize");
-            //getKernelOfNLM(nIndex);  // insert an kernel to the global kernel holder              
+            int nIndex = insertKernel(m_Program, "Resize");
+            getKernelOfResize(nIndex);  // insert an kernel to the global kernel holder              
 
+            nIndex = insertKernel(m_Program, "SplitNV21Channel");
+            getKernelOfSplitNV21Channel(nIndex);  // insert an kernel to the global kernel holder
+
+            nIndex = insertKernel(m_Program, "MergeNV21Channel");
+            getKernelOfMergeNV21Channel(nIndex);  // insert an kernel to the global kernel holder
             return true;
         }
 
-        CLKernel& PyramidNLM_OCL::getKernelOfNLM(int n) // a help function to get a specifical kernel
+        CLKernel& PyramidNLM_OCL::getKernelOfResize(int n) // a help function to get a specifical kernel
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfSplitNV21Channel(int n) // a help function to get a specifical kernel
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfMergeNV21Channel(int n) // a help function to get a specifical kernel
         {
             static int index = -1;
             if (index == -1) index = n;
@@ -80,8 +100,17 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
             }
             bRet &= SplitNV21Channel(srcUV, u, v);
-            bRet &= run(u, u, fNoiseVarUV, true);
-            bRet &= run(v, v, fNoiseVarUV, true);
+            //bRet &= run(u, u, fNoiseVarUV, true);
+            //bRet &= run(v, v, fNoiseVarUV, true);
+
+            Mat tmp = srcUV.map();
+            Mat tmpU = u.map();
+            Mat tmpV = v.map();
+
+            srcUV.unmap();
+            u.unmap();
+            v.unmap();
+
             bRet &= MergeNV21Channel(u, v, dstUV);
 
 
@@ -145,7 +174,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return bRet;
         }
 
-        bool PyramidNLM_OCL::resize_8uc1(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking) // the main function to call the kernel
+        bool PyramidNLM_OCL::Resize(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking) // the main function to call the kernel
         {
             bool bRet = true;
 
@@ -156,7 +185,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int dst_cols = dst.cols();
             int dst_rows = dst.rows();
 
-            CLKernel& kernel = getKernelOfNLM(insertKernel(program, "Resize"));
+            CLKernel& kernel = getKernelOfResize(0);
             kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows); // set argument
             size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
@@ -171,9 +200,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             bool bRet = true;
 
-            resize_8uc1(src, dst, false);
+            Resize(src, dst, m_bIsBlocking);
 
-            Mat tmp = dst.map();
+            //Mat tmp = dst.map();
 
             return bRet;
         }
@@ -213,17 +242,20 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int dst_cols = u.cols();
             int dst_rows = u.rows();
 
-            CLKernel& kernel = getKernelOfNLM(insertKernel(program, "SplitNV21Channel"));
+            CLKernel& kernel = getKernelOfSplitNV21Channel(0);
             kernel.Args(uv, src_step, src_cols, src_rows, u, v, dst_step, dst_cols, dst_rows); // set argument
             size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
-            bRet = kernel.run(dims, global_size, local_size, false); // run the kernel
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            Mat tmp = uv.map();
-            Mat tmpU = u.map();
-            Mat tmpV = v.map();
+            //Mat tmp  = uv.map();
+            //Mat tmpU = u.map();
+            //Mat tmpV = v.map();
+            //uv.unmap();
+            //u.unmap();
+            //v.unmap();
 
             return bRet;
         }
@@ -231,6 +263,30 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::MergeNV21Channel(CLMat& u, CLMat& v, CLMat& uv)
         {
             bool bRet = true;
+
+            int src_step = u.stride(0);
+            int src_cols = u.cols();
+            int src_rows = u.rows();
+            int dst_step = uv.stride(0);
+            int dst_cols = uv.cols();
+            int dst_rows = uv.rows();
+            
+            CLKernel& kernel = getKernelOfMergeNV21Channel(0);
+            kernel.Args(u, v, src_step, src_cols, src_rows, uv, dst_step, dst_cols, dst_rows); // set argument
+            size_t global_size[] = { (size_t)(src_cols), (size_t)(src_rows) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
+            Mat tmp = uv.map();
+            Mat tmpU = u.map();
+            Mat tmpV = v.map();
+
+            uv.unmap();
+            u.unmap();
+            v.unmap();
+
             return bRet;
         }
 
