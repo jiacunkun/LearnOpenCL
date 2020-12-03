@@ -34,9 +34,14 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool resize_8uc1(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking = false); // the main function to call the kernel
 
         private:
+            CLProgram program;
+
             CLMat m_PyrDownImg[4];
             CLMat m_DenoiseImg[4];
             CLMat m_TempImg[4];
+            int m_nWidth = 0;
+            int m_nHeight = 0;
+            int m_nStep = 0;
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类

@@ -6,6 +6,7 @@
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
+
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
 
@@ -21,12 +22,14 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             const char* source_file_path = GlobalKernelsHolder::getProgramSourceFilePath();
             const char* options = nullptr;
-            CLProgram program = buildProgramFromFile(context, source_file_path, options, type);
+            program = buildProgramFromFile(context, source_file_path, options, type);
             if (program.program() == nullptr)
             {
                 return false;
             }
-            getKernelOfNLM(insertKernel(program, "resize_8uc1"));  // insert an kernel to the global kernel holder
+
+            //int nIndex = insertKernel(program, "Resize");
+            //getKernelOfNLM(nIndex);  // insert an kernel to the global kernel holder              
 
             return true;
         }
@@ -38,26 +41,28 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return GlobalKernelsHolder::getKernel(index);
         }
 
-        void PyramidNLM_OCL::initBuffer(int nWidth, int nHeight, int nStep, int nLayer)
-        {
-            LOGD("initBuffer++");
-            for (int i = 0; i < nLayer; i++)
-            {
-                //if (m_PyrDownImg[i].is_svm_available()) // an eample to use SVM buffer
-                //{
-                //	m_PyrDownImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
-                //	m_DenoiseImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
-                //	m_TempImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
-                //}
-                //else
-                {
-                    m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                    m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                    m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                }
-            }
-            LOGD("initBuffer--");
-        }
+		void PyramidNLM_OCL::initBuffer(int nWidth, int nHeight, int nStep, int nLayer)
+		{
+
+			LOGD("initBuffer++");
+			for (int i = 0; i < nLayer; i++)
+			{
+				//if (m_PyrDownImg[i].is_svm_available()) // an eample to use SVM buffer
+				//{
+				//	m_PyrDownImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
+				//	m_DenoiseImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
+				//	m_TempImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
+				//}
+				//else
+				{
+					m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+					m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+					m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+				}
+			}
+			LOGD("initBuffer--");
+
+		}
 
         bool PyramidNLM_OCL::runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
         {
@@ -86,18 +91,20 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::run(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0)
         {
+            LOGD("PyramidNLM_OCL::run++");
             MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             bool bRet = true;
 
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 4; //金字塔层数
+            int nLayer = 4; //layer of pyramid
+            
 
-            initBuffer(nWidth, nHeight, nStep, nLayer); // 创建空内存
+            // new blank memory
+            initBuffer(nWidth, nHeight, nStep, nLayer);
 
-
-            //构建金字塔
+            // build pyramid
             src.copyTo(m_PyrDownImg[0]);
 
             for (int i = 0; i < nLayer - 1; i++)
@@ -105,7 +112,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i + 1]);
             }
 
-            // 从小到大逐层降噪
+            // denoise from small layer to large layer
             for (int i = nLayer - 1; i > 0; i--)
             {
                 float fTmpVar = fNoiseVar * fPow[i];;
@@ -117,7 +124,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
             }
 
-            // 最大层特殊处理
+            // special handle for 0 layer
             {
                 int i = 0;
                 if (bIsDenoiseFor0)
@@ -126,19 +133,22 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                     fTmpVar = MAX(1.0f, fTmpVar);
 
                     bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
-                    m_DenoiseImg[0].copyTo(dst);// 将结果拷贝给输出
+                    m_DenoiseImg[0].copyTo(dst);// copy result to output
                 }
                 else
                 {
-                    m_PyrDownImg[0].copyTo(dst);// 将结果拷贝给输出
+                    m_PyrDownImg[0].copyTo(dst);// copy result to output
                 }
             }
 
+            LOGD("PyramidNLM_OCL::run--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::resize_8uc1(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking) // the main function to call the kernel
         {
+            bool bRet = true;
+
             int src_step = src.stride(0);
             int src_cols = src.cols();
             int src_rows = src.rows();
@@ -146,13 +156,15 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int dst_cols = dst.cols();
             int dst_rows = dst.rows();
 
-            CLKernel& kernel = getKernelOfNLM(0);
+            CLKernel& kernel = getKernelOfNLM(insertKernel(program, "Resize"));
             kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows); // set argument
             size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             return kernel.run(dims, global_size, local_size, is_blocking); // run the kernel
+
+            return bRet;
         }
 
         bool PyramidNLM_OCL::PyramidDown(CLMat& src, CLMat& dst)
@@ -160,6 +172,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool bRet = true;
 
             resize_8uc1(src, dst, false);
+
+            Mat tmp = dst.map();
 
             return bRet;
         }
@@ -191,6 +205,22 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::SplitNV21Channel(CLMat& uv, CLMat& u, CLMat& v)
         {
             bool bRet = true;
+
+            int src_step = uv.stride(0);
+            int src_cols = uv.cols();
+            int src_rows = uv.rows();
+            int dst_step = u.stride(0);
+            int dst_cols = u.cols();
+            int dst_rows = u.rows();
+
+            CLKernel& kernel = getKernelOfNLM(insertKernel(program, "SplitNV21Channel"));
+            kernel.Args(uv, src_step, src_cols, src_rows, u, v, dst_step, dst_cols, dst_rows); // set argument
+            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            return kernel.run(dims, global_size, local_size, false); // run the kernel
+
             return bRet;
         }
 

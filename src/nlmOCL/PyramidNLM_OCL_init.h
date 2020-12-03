@@ -4,7 +4,7 @@
 #include "CLInitailizerAuxi.h"
 #include "PyramidNLM_OCL.h"
 
-//#define INITOCL_FROM_SOURCE
+#define INITOCL_FROM_SOURCE
 
 #ifdef INITOCL_FROM_SOURCE
 
@@ -28,9 +28,9 @@ namespace arc_example
 }
 
 static bool g_is_initialized = false;
-static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // 环境初始化句柄
+static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // init env handle
 
-// 从外部文件加载数据
+// load data from external file
 bool initializeOCL(arc_example::ocl::OCLInitilizerExample& ocl_initializer)
 {
     std::string device_type = "GPU";
