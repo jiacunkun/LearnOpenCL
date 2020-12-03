@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     MInt32 lScale = 1;
     MInt32 pSharpenIntensity[4] = { 0 };
 
-    sprintf(filename, "E:\\svn\\NLM_OCL\\data\\ISO01025_007_1_4624x3472.NV21");
+    sprintf(filename, "E:\\svn\\NLM_OCL\\data\\ISO00643_040_1_4624x3472_[0]_50-0-50-0-0-0-80-0-0-0-0-1-0-1-0-1-0-0-0-0-0-0-0--1-0-0-0-ISO=0-CamType=0-fZoomValue=1.000000_res.NV21");
 
     lret = ParseWidthHeight(filename, &height, &width);
     if (lret != 0)

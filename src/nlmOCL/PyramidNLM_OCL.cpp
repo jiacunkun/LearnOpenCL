@@ -76,8 +76,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //}
             //else
             {
-                u.create_with_clmem(srcUV.height() / 2, srcUV.width(), ACV_8UC1);
-                v.create_with_clmem(srcUV.height() / 2, srcUV.width(), ACV_8UC1);
+                u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
+                v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
             }
             bRet &= SplitNV21Channel(srcUV, u, v);
             bRet &= run(u, u, fNoiseVarUV, true);
@@ -162,7 +162,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
-            return kernel.run(dims, global_size, local_size, is_blocking); // run the kernel
+            bRet = kernel.run(dims, global_size, local_size, is_blocking); // run the kernel
 
             return bRet;
         }
@@ -219,7 +219,11 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
-            return kernel.run(dims, global_size, local_size, false); // run the kernel
+            bRet = kernel.run(dims, global_size, local_size, false); // run the kernel
+
+            Mat tmp = uv.map();
+            Mat tmpU = u.map();
+            Mat tmpV = v.map();
 
             return bRet;
         }

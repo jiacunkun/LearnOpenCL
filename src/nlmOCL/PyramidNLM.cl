@@ -12,19 +12,31 @@ kernel void SplitNV21Channel
 )
 {
     //获取当前图像行和列
-    int x = get_global_id(1);
-	int y = get_global_id(0);
+    int x = get_global_id(0);
+	int y = get_global_id(1);
 
-	uDst[y*dst_step + x] = uvSrc[y*src_step + x];
-	vDst[y*dst_step + x] = uvSrc[y*src_step + x + 1];
+	uDst[y*dst_step + x] = uvSrc[y*src_step + 2*x];
+	vDst[y*dst_step + x] = uvSrc[y*src_step + 2*x + 1];
+	
 }
 
 
-kernel void MergeNV21Channel(global const unsigned char *uSrc, global const unsigned char *vSrc, global unsigned char *uvDst, const int width, const int height, const int step)
+kernel void MergeNV21Channel
+(
+	global const unsigned char *uSrc, 
+	global const unsigned char *vSrc, 
+	int src_step,
+	int src_cols,
+	int src_rows,
+	global unsigned char *uvDst, 
+	int dst_step,
+	int dst_cols,
+	int dst_rows
+)
 {
     //获取当前图像行和列
-   	int x = get_global_id(1);
-	int y = get_global_id(0);
+   	int x = get_global_id(0);
+	int y = get_global_id(1);
 
 
 
