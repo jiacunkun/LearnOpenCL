@@ -167,13 +167,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //bRet &= run(u, u, fNoiseVarUV, true);
             //bRet &= run(v, v, fNoiseVarUV, true);
 
-            Mat tmp = srcUV.map();
-            Mat tmpU = u.map();
-            Mat tmpV = v.map();
-
-            srcUV.unmap();
-            u.unmap();
-            v.unmap();
+//            Mat tmp = srcUV.map();
+//            Mat tmpU = u.map();
+//            Mat tmpV = v.map();
+//
+//            srcUV.unmap();
+//            u.unmap();
+//            v.unmap();
 
             bRet &= MergeNV21Channel(u, v, dstUV);
 
@@ -191,7 +191,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 4; //layer of pyramid
+            int nLayer = 1; //layer of pyramid
             
 
             // new blank memory
@@ -322,17 +322,17 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
             kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows, map_clmat, invMap_clmat); // set argument
-            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            size_t global_size[] = { (size_t)(dst_cols>>2), (size_t)(dst_rows>>2) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            Mat tmpsrc = src.map();
-            Mat tmpdst = dst.map();
-
-            src.unmap();
-            dst.unmap();
+//            Mat tmpsrc = src.map();
+//            Mat tmpdst = dst.map();
+//
+//            src.unmap();
+//            dst.unmap();
 
             LOGD("NLMDenoise--");
             return bRet;

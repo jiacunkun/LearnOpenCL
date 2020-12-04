@@ -325,7 +325,10 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
                             )
     {
         // 权重表清零
-        //memset(&lSumWei[ 0 ], 0, 17 * sizeof(int));
+		for (int i = 0; i < 17; i++)
+		{
+			lSumWei[ i ] = 0;
+		}
 
         // 当前块, 权重设置为最大值256
         AddBlockSum(pCurLine, lPitch, lSumWei, 256);
@@ -362,8 +365,8 @@ kernel void NLMDenoise
 )
 {
     //获取当前图像行和列
-    int x = get_global_id(0);
-	int y = get_global_id(1);
+    int x = get_global_id(0)*4 + 1;
+	int y = get_global_id(1)*4 + 1;
 
 	int lSumWei[17] = {0};
 

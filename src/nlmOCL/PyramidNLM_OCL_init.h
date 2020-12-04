@@ -44,6 +44,17 @@ bool initializeOCL(arc_example::ocl::OCLInitilizerExample& ocl_initializer)
 
 #ifdef INITOCL_FROM_SOURCE
     std::vector<std::string> src_files;
+    #if ANDROID
+    src_files.push_back("/data/local/tmp/test/PyramidNLM.cl"); // the source file
+    //FILE* fp = fopen("../test.txt", "wb");
+    //if (fp)
+    //{
+    //	fclose(fp);
+    //}
+
+    std::string output_binary_source = "/data/local/tmp/test/binary_source.bin";
+    std::string output_program_binary = "/data/local/tmp/test/program_binary.bin";
+    #else
 		src_files.push_back(PROJECT_PATH"/src/nlmOCL/PyramidNLM.cl"); // the source file
 		//FILE* fp = fopen("../test.txt", "wb");
 		//if (fp)
@@ -53,7 +64,7 @@ bool initializeOCL(arc_example::ocl::OCLInitilizerExample& ocl_initializer)
 
 		std::string output_binary_source = PROJECT_PATH"/include/binary_source.bin";
 		std::string output_program_binary = PROJECT_PATH"/include/windows/program_binary.bin";
-
+    #endif
 		bool rval = ocl_initializer.initFromNativeSource(device_type.c_str(), device_index, src_files,
 			output_binary_source.c_str(), output_program_binary.c_str());
 

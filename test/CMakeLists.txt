@@ -27,8 +27,11 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/src/
 )
 
-
-file(GLOB MAIN_DIR ./sample.cpp)
+if(ANDROID)
+    file(GLOB MAIN_DIR ./test_android.cpp)
+else()
+    file(GLOB MAIN_DIR ./sample.cpp)
+endif()
 
 add_executable(test_ocl ${MAIN_DIR})
 add_executable(gen_ocl dump_binary.cpp)

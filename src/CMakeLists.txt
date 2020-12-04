@@ -11,7 +11,7 @@ if(DEBUG_OUTPUT)
 endif()
 
 option(OPEN_LOG "Open log apps or not" OFF)
-if(OPEN_LOG)
+if(1)
     # 添加宏定义
     message(log)
     add_definitions(-DCALCULATE_TIME=1)  #统计时间

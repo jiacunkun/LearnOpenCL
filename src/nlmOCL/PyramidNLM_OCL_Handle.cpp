@@ -84,7 +84,7 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
 
         // run GPU
         {
-            lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, false);
+            lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, true);
             lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
         }
 

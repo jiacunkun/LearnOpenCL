@@ -30,6 +30,6 @@ add_subdirectory(src)
 # 测试代码
 option(TEST_APPS "Build test apps or not" OFF)
 message(${TEST_APPS})
-if(TEST_APPS)
+#if(TEST_APPS)
     add_subdirectory(test)
-endif()
+#endif()
