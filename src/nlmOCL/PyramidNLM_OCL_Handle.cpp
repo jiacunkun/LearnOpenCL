@@ -1,6 +1,6 @@
 #include "PyramidNLM_OCL_Handle.h"
 #include "PyramidNLM_OCL.h"
-#include "single_image_enhancement_define.h"
+#include "Arcsoft_Define_For_SingleImage.h"
 #include "merror.h"
 #include "CLMat.h"
 #include "PyramidNLM_OCL_init.h"
@@ -35,6 +35,8 @@ bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
 
 MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV)
 {
+    LOGD("PyramidNLM_OCL_Handle++");
+
     MInt32 lRet = 0;
 
     // init env
@@ -82,7 +84,7 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
 
         // run GPU
         {
-            //lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, false);
+            lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, false);
             lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
         }
 
@@ -108,5 +110,7 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         g_ocl_initializer.unInit(); // uninitializtion for ocl should be the most tail of the library
         g_is_initialized = false;
     }
-    return lRet;
+
+    LOGD("PyramidNLM_OCL_Handle++");
+    return lRet - 1;
 }

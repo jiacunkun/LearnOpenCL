@@ -3,6 +3,7 @@
 
 #include "CLInitailizerAuxi.h"
 #include "PyramidNLM_OCL.h"
+#include "ArcsoftLog.h"
 
 #define INITOCL_FROM_SOURCE
 
@@ -43,15 +44,15 @@ bool initializeOCL(arc_example::ocl::OCLInitilizerExample& ocl_initializer)
 
 #ifdef INITOCL_FROM_SOURCE
     std::vector<std::string> src_files;
-		src_files.push_back("./../../../../src/nlmOCL/PyramidNLM.cl"); // the source file
+		src_files.push_back(PROJECT_PATH"/src/nlmOCL/PyramidNLM.cl"); // the source file
 		//FILE* fp = fopen("../test.txt", "wb");
 		//if (fp)
 		//{
 		//	fclose(fp);
 		//}
 
-		std::string output_binary_source = "./../../../../include/binary_source.bin";
-		std::string output_program_binary = "./../../../../include/windows/program_binary.bin";
+		std::string output_binary_source = PROJECT_PATH"/include/binary_source.bin";
+		std::string output_program_binary = PROJECT_PATH"/include/windows/program_binary.bin";
 
 		bool rval = ocl_initializer.initFromNativeSource(device_type.c_str(), device_index, src_files,
 			output_binary_source.c_str(), output_program_binary.c_str());

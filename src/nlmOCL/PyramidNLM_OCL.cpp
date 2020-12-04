@@ -7,14 +7,47 @@
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
-        PyramidNLM_OCL::PyramidNLM_OCL()
+
+        static MVoid MakeDivTable(MInt32 *pTable, MInt32 lSize)
+        {
+            for(MInt32 i = 1; i < lSize; i++) 
+            {
+                pTable[ i ] = ( 1 << 20 ) / i;
+            }
+            pTable[ 0 ] = pTable[ 1 ];
+        }
+
+
+
+        static MVoid MakeWeightMap(MInt32 *pTable, MFloat fVar, MInt32 lMaxNum)
         {
 
+            MInt32 SumVar = fVar * 2 * 16 * 16;
+            pTable[ 0 ] = 256; 
+            for(MInt32 x = 1; x < lMaxNum; x++)
+            {
+                MFloat lVal = x * x; 
+                lVal = ( MInt32 ) ( 255.0 * exp(-lVal / SumVar) + 0.5f );
+                pTable[ x ] = ( MByte ) lVal;
+                //printf("%f = %d, %d\n", fVar, x, pTable[ x ]);
+            }
+        }
+
+
+        PyramidNLM_OCL::PyramidNLM_OCL()
+        {
+            LOGD("PyramidNLM_OCL()");
+            m_pMap = new MInt32[16 * 50];
+            m_pInvMap = new MInt32[256 * 9 + 1];
+
+            MakeDivTable(m_pInvMap, ( 256 * 9 + 1 ));
         }
 
         PyramidNLM_OCL::~PyramidNLM_OCL()
         {
-
+            LOGD("~PyramidNLM_OCL()");
+            SAFE_DELETE_ARRAY(m_pMap)
+            SAFE_DELETE_ARRAY(m_pInvMap)
         }
 
        
@@ -244,6 +277,15 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar)
         {
             bool bRet = true;
+            if (m_fNoiseVar != fNoiseVar)
+            {
+                MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
+                m_fNoiseVar = fNoiseVar;
+            }
+
+
+
+
             return bRet;
         }
 

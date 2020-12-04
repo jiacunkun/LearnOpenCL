@@ -1,10 +1,22 @@
+#ifndef	ABS
+#define ABS(x)		((x) > 0 ? (x) : -(x))
+#endif
+
+#ifndef	MAX
+#define MAX(min, x)		((x) > min ? (x) : min)
+#endif
+
+#ifndef	MIN
+#define MIN(max, x)		((x) < max ? (x) : max)
+#endif
+
 kernel void Resize
 (
-	const global unsigned char *src,
+	const global uchar *src,
 	int src_step,
 	int src_cols,
 	int src_rows,
-	global unsigned char *dst,
+	global uchar *dst,
 	int dst_step,
 	int dst_cols,
 	int dst_rows
@@ -50,17 +62,17 @@ kernel void Resize
 	float2 v_alpha = (float2)(1.0f - alpha, alpha );
 	float a0 = dot(A00, v_alpha);
 	float a1 = dot(A10, v_alpha);
-	dst[y*dst_step + x] = (unsigned char)(a0 + (a1 - a0) * beta);
+	dst[y*dst_step + x] = (uchar)(a0 + (a1 - a0) * beta);
 }
 
 kernel void SplitNV21Channel
 (
-	const global unsigned char *uvSrc,
+	const global uchar *uvSrc,
 	int src_step,
 	int src_cols,
 	int src_rows,
-	global unsigned char *uDst,
-	global unsigned char *vDst,
+	global uchar *uDst,
+	global uchar *vDst,
 	int dst_step,
 	int dst_cols,
 	int dst_rows
@@ -77,12 +89,12 @@ kernel void SplitNV21Channel
 
 kernel void MergeNV21Channel
 (
-	global const unsigned char *uSrc, 
-	global const unsigned char *vSrc, 
+	global const uchar *uSrc, 
+	global const uchar *vSrc, 
 	int src_step,
 	int src_cols,
 	int src_rows,
-	global unsigned char *uvDst, 
+	global uchar *uvDst, 
 	int dst_step,
 	int dst_cols,
 	int dst_rows
@@ -99,11 +111,11 @@ kernel void MergeNV21Channel
 
 kernel void ImageSubImage
 (
-	global unsigned char *srcDst, 
+	global uchar *srcDst, 
 	int src_step,
 	int src_cols,
 	int src_rows,
-	global unsigned char *src, 
+	global uchar *src, 
 	int dst_step,
 	int dst_cols,
 	int dst_rows
@@ -123,11 +135,11 @@ kernel void ImageSubImage
 
 kernel void ImageAddImage
 (
-	global unsigned char *srcDst, 
+	global uchar *srcDst, 
 	int src_step,
 	int src_cols,
 	int src_rows,
-	global unsigned char *src, 
+	global uchar *src, 
 	int dst_step,
 	int dst_cols,
 	int dst_rows
@@ -144,3 +156,70 @@ kernel void ImageAddImage
 	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
 	srcDst[y*src_step + x] = srcDstVal;
 }
+
+
+// inline int  GetBlockDiff(local uchar *pCurBlock, local uchar *pNeiBlock, int lPitch)
+//     {
+//         int lDif = 0;
+//         int lPDif = 0;
+
+//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         pCurBlock += lPitch;
+//         pNeiBlock += lPitch;
+
+//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         pCurBlock += lPitch;
+//         pNeiBlock += lPitch;
+
+//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         pCurBlock += lPitch;
+//         pNeiBlock += lPitch;
+
+//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+//         lPDif = MIN(49, lPDif);
+//         lDif += lPDif;
+
+//         return lDif;
+//     }

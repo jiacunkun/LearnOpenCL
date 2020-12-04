@@ -1,25 +1,25 @@
 /*
- * brief: 各平台的公共宏定义
+ * brief: 
  */
 #ifndef _DEFINE_H
 #define _DEFINE_H
 
 #define CALCULATE_TIME 1
 
-//命名空间宏定义
+//define namespace
 #define NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN   namespace acv { namespace ocl {
 #define NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END     } }
 #define USING_NS_SINFLE_IMAGE_ENHANCEMENT   using namespace acv::ocl;
 
-//定义多线程
+//define multi thread
 #define MULTI_THREAD
 #define MCV_MULTI_THREAD
 
-//创建内存
+//malloc memory
 #undef SAFE_MALLOC
 #define SAFE_MALLOC(context, dataType, length)  (dataType*)MMemAlloc(context, (length)*sizeof(dataType))
 
-//安全释放内存
+//safe release memory
 #undef SAFE_DELETE
 #define SAFE_DELETE(x) if((x)!=nullptr){ delete (x); (x)=nullptr; }
 
@@ -29,7 +29,7 @@
 #undef SAFE_FREE_ARRAY
 #define SAFE_FREE_ARRAY(context, x) if((x)!=nullptr){ MMemFree(context, (x)); (x)=nullptr; }
 
-//检查函数状态
+// check func state
 #ifndef CHECK_ERROR
 #define CHECK_ERROR(code)	if(MOK != (code)) { goto exit; }
 #endif
@@ -45,7 +45,6 @@
     }
 #endif
 
-// 绝对值
 #ifndef	ABS
 #define ABS(x)		((x) > 0 ? (x) : -(x))
 #endif
@@ -62,7 +61,7 @@
 #define ROUND(x)		((x) > 0 ? (x)+0.5 : (x)-0.5)
 #endif
 
-// 限制数据范围
+
 #ifndef CLAMP
 #define CLAMP(x, min, max)          \
     {                               \

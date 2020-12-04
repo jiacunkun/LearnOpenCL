@@ -1,4 +1,7 @@
 # ./src/CMakeList.txt
+# 定义工程路径
+add_definitions(-DPROJECT_PATH="${CMAKE_SOURCE_DIR}") #定义当前算法库的log
+
 # debug宏定义
 option(DEBUG_OUTPUT "Build test apps or not" OFF)
 message(${DEBUG_OUTPUT})
@@ -31,14 +34,11 @@ include("${CMAKE_SOURCE_DIR}/cmake/libacv_oclcore-config.cmake")
 # 搜集算法库所需的头文件和源码文件
 file(GLOB SRC *.cpp *.h)
 file(GLOB SRC_NLM_OCL nlmOCL/*.cpp nlmOCL/*.h)
-file(GLOB SRC_NLM pyramidNLM/*.cpp pyramidNLM/*.h)
 file(GLOB SRC_COMMON common/*.cpp common/*.h)
 
 
 set(SOURCE_FILES
         ${SRC}
-#        ${SRC_NLM}
-#        ${SRC_GUIDED}
         ${SRC_NLM_OCL}
         ${SRC_COMMON}
         )
