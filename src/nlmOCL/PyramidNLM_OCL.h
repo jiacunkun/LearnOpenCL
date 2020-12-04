@@ -38,6 +38,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLKernel& getKernelOfMergeNV21Channel(int n);
             CLKernel& getKernelOfImageSubImage(int n);
             CLKernel& getKernelOfImageAddImage(int n);
+            CLKernel& getKernelOfNLMDenoise(int n);
 
         private:
             CLProgram m_Program;

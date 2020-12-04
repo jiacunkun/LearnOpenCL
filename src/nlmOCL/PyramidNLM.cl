@@ -10,6 +10,14 @@
 #define MIN(max, x)		((x) < max ? (x) : max)
 #endif
 
+#ifndef CLAMP
+#define CLAMP(x, min, max)          \
+    {                               \
+        ((x) = (x) > min ? (x) : min);       \
+        ((x) = (x) < max ? (x) : max);       \
+    }
+#endif
+
 kernel void Resize
 (
 	const global uchar *src,
@@ -158,68 +166,219 @@ kernel void ImageAddImage
 }
 
 
-// inline int  GetBlockDiff(local uchar *pCurBlock, local uchar *pNeiBlock, int lPitch)
-//     {
-//         int lDif = 0;
-//         int lPDif = 0;
+inline int  GetBlockDiff(const global uchar *pCurBlock, const global uchar *pNeiBlock, int lPitch)
+{
+    int lDif = 0;
+    int lPDif = 0;
 
-//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         pCurBlock += lPitch;
-//         pNeiBlock += lPitch;
+    lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    pCurBlock += lPitch;
+    pNeiBlock += lPitch;
 
-//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         pCurBlock += lPitch;
-//         pNeiBlock += lPitch;
+    lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    pCurBlock += lPitch;
+    pNeiBlock += lPitch;
 
-//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         pCurBlock += lPitch;
-//         pNeiBlock += lPitch;
+    lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    pCurBlock += lPitch;
+    pNeiBlock += lPitch;
 
-//         lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
-//         lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
-//         lPDif = MIN(49, lPDif);
-//         lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 0 ] - pNeiBlock[ 0 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 1 ] - pNeiBlock[ 1 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 2 ] - pNeiBlock[ 2 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
+    lPDif = ABS(pCurBlock[ 3 ] - pNeiBlock[ 3 ]);
+    lPDif = MIN(49, lPDif);
+    lDif += lPDif;
 
-//         return lDif;
-//     }
+    return lDif;
+}
+
+inline void AddBlockSum(const global uchar *pNeiBlock, int lPitch, int *lSumWei, int lW)
+{
+    lSumWei[ 0 ] += lW;
+
+    lSumWei[ 1 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 2 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 3 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 4 ] += pNeiBlock[ 3 ] * lW;
+    pNeiBlock += lPitch;
+
+    lSumWei[ 5 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 6 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 7 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 8 ] += pNeiBlock[ 3 ] * lW;
+    pNeiBlock += lPitch;
+
+    lSumWei[ 9 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 10 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 11 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 12 ] += pNeiBlock[ 3 ] * lW;
+    pNeiBlock += lPitch;
+
+    lSumWei[ 13 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 14 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 15 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 16 ] += pNeiBlock[ 3 ] * lW;
+}
+
+inline void AddBlockSumByNei
+ (
+    const global uchar *pCurBlock,
+    const global uchar *pNeiBlock,
+    int lPitch,
+    int *lSumWei,
+    const global int *pMap
+ )
+{
+    int lBDif = GetBlockDiff(pCurBlock, pNeiBlock, lPitch); // 计算块匹配值d,
+    CLAMP(lBDif, 1, 799);
+    int lW = pMap[lBDif]; // 获取权重, 查表法, exp(-d/(h^2))
+    lW >>= 1;  // ？？？
+    AddBlockSum(pNeiBlock, lPitch, lSumWei, lW);
+}
+
+inline void GetBlockResult(global uchar *pDstBlock,
+                            int lPitch,
+                            int *lSumWei,
+                            const global int *pInvMap)
+    {
+        int lSW = lSumWei[ 0 ];
+        int lInvW = pInvMap[ lSW ];
+        lSumWei++;
+
+        pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock += lPitch;
+        lSumWei += 4;
+
+        pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock += lPitch;
+        lSumWei += 4;
+
+        pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock += lPitch;
+        lSumWei += 4;
+
+        pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
+        pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+
+    }
+
+
+inline void ProcessBlock4x4(const global uchar *pCurLine,
+                            const global uchar *pPreLine,
+                            const global uchar *pNexLine,
+                            global uchar *pDstLine,
+                            const global int *pMap,
+                            int lPitch,
+                            int *lSumWei,
+                            const global int *pInvMap
+                            )
+    {
+        // 权重表清零
+        //memset(&lSumWei[ 0 ], 0, 17 * sizeof(int));
+
+        // 当前块, 权重设置为最大值256
+        AddBlockSum(pCurLine, lPitch, lSumWei, 256);
+
+        // 领域8个位置
+        AddBlockSumByNei(pCurLine, pCurLine - 1, lPitch, lSumWei, pMap);
+        AddBlockSumByNei(pCurLine, pCurLine + 1, lPitch, lSumWei, pMap);
+
+        AddBlockSumByNei(pCurLine, pPreLine - 1, lPitch, lSumWei, pMap);
+        AddBlockSumByNei(pCurLine, pPreLine, lPitch, lSumWei, pMap);
+        AddBlockSumByNei(pCurLine, pPreLine + 1, lPitch, lSumWei, pMap);
+
+        AddBlockSumByNei(pCurLine, pNexLine - 1, lPitch, lSumWei, pMap);
+        AddBlockSumByNei(pCurLine, pNexLine, lPitch, lSumWei, pMap);
+        AddBlockSumByNei(pCurLine, pNexLine + 1, lPitch, lSumWei, pMap);
+
+        // average / sweight
+        GetBlockResult(pDstLine, lPitch, lSumWei, pInvMap);
+    }
+
+
+kernel void NLMDenoise
+(
+	const global uchar *pSrc,
+	int src_step,
+	int src_cols,
+	int src_rows,
+	global uchar *pDst,
+	int dst_step,
+	int dst_cols,
+	int dst_rows,
+	const global int *pMap,
+	const global int *pInvMap
+)
+{
+    //获取当前图像行和列
+    int x = get_global_id(0);
+	int y = get_global_id(1);
+
+	int lSumWei[17] = {0};
+
+	const global uchar *pCurLine = pSrc + src_step * y + x;
+    const global uchar *pPreLine = pCurLine - src_step + x;
+    const global uchar *pNexLine = pCurLine + src_step + x;
+    global uchar *pDstLine = pDst + dst_step * y + x;
+
+	ProcessBlock4x4(pCurLine,
+                    pPreLine,
+                    pNexLine,
+                    pDstLine,
+                    pMap,
+                    src_step,
+                    lSumWei,
+                    pInvMap);
+
+}

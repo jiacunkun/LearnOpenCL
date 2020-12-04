@@ -77,6 +77,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             nIndex = insertKernel(m_Program, "ImageAddImage");
             getKernelOfImageAddImage(nIndex);
 
+            nIndex = insertKernel(m_Program, "NLMDenoise");
+            getKernelOfNLMDenoise(nIndex);
+
             return true;
         }
 
@@ -109,6 +112,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         }
 
         CLKernel& PyramidNLM_OCL::getKernelOfImageAddImage(int n)
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfNLMDenoise(int n)
         {
             static int index = -1;
             if (index == -1) index = n;
@@ -276,16 +286,55 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar)
         {
+            LOGD("NLMDenoise++");
             bool bRet = true;
+
             if (m_fNoiseVar != fNoiseVar)
             {
                 MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
                 m_fNoiseVar = fNoiseVar;
             }
 
+            Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
+            Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, m_pInvMap);
 
+            CLMat map_clmat, invMap_clmat;
+            //if (y_clmat.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
+            //	invMap_clmat.create_with_svm(1, 256 * 9 + 1, ACV_32SC1);
+            //}
+            //else
+            {
+                map_clmat.create_with_clmem(1, 16*50, ACV_32SC1);
+                invMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
+            }
 
+            map_clmat.copyFrom(map_mat);
+            invMap_clmat.copyFrom(invMap_mat);
 
+            int src_step = src.stride(0);
+            int src_cols = src.cols();
+            int src_rows = src.rows();
+            int dst_step = dst.stride(0);
+            int dst_cols = dst.cols();
+            int dst_rows = dst.rows();
+
+            CLKernel& kernel = getKernelOfNLMDenoise(0);
+            kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows, map_clmat, invMap_clmat); // set argument
+            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
+            Mat tmpsrc = src.map();
+            Mat tmpdst = dst.map();
+
+            src.unmap();
+            dst.unmap();
+
+            LOGD("NLMDenoise--");
             return bRet;
         }
 

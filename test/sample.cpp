@@ -114,8 +114,8 @@ int main(int argc, char* argv[])
 
     // run demo
     {
-        MFloat fNoiseVarY = 10;
-        MFloat fNoiseVarUV = 10;
+        MFloat fNoiseVarY = 20;
+        MFloat fNoiseVarUV = 20;
         lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
     }
 
