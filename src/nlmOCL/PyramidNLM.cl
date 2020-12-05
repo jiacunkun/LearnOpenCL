@@ -542,11 +542,32 @@ kernel void NLMDenoise
     int x = get_global_id(0)*4;
 	int y = get_global_id(1)*4 + 1;
 
-	const global uchar *pCurLine = pSrc + src_step * y + x;
-    global uchar *pDstLine = pDst + dst_step * y + x;
+
 
    
-    //中间数据处理
+     if (y == 1) //最上面一行
+     {
+        const global uchar *pCurLine = pSrc + src_step * (y - 1) + x;
+        global uchar *pDstLine = pDst + dst_step * (y - 1) + x;
+     	ProcessLinesBroundMain(pCurLine, pCurLine + src_step, pDstLine, src_cols, pMap, pInvMap);
+     }
+
+	 if (src_rows - y <= 4)
+     {
+     	int diff = src_rows - y;
+        for (int i = 0; i < diff-1; i++)
+        {
+            const global uchar *pCurLine = pSrc + src_step * (y + i) + x;
+            global uchar *pDstLine = pDst + dst_step * (y + i) + x;
+	   	    ProcessLines1Main(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, src_cols, pMap, pInvMap);
+	    }
+		{
+			const global uchar *pCurLine = pSrc + src_step * (y + diff - 1) + x;
+        	global uchar *pDstLine = pDst + dst_step * (y + diff - 1) + x;
+     		ProcessLinesBroundMain(pCurLine, pCurLine - src_step, pDstLine, src_cols, pMap, pInvMap);
+		}
+	 }
+
 	if (y >= 1 && y < src_rows - 4)
     {
 		if (x == 0)
@@ -568,30 +589,32 @@ kernel void NLMDenoise
 			int diff = src_cols - x;
 			for (int i = 0; i < diff-1; i++)
 			{
-			const global uchar *pCurLine = pSrc + src_step * y + x + i;
-    		global uchar *pDstLine = pDst + dst_step * y + x + i;
-			int lShift = 0;
-			ProcessPoint(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap);
-            lShift += src_step;
-            ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
-            lShift += src_step;
-            ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
-            lShift += src_step;
-            ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
-            lShift += src_step;
+			    const global uchar *pCurLine = pSrc + src_step * y + x + i;
+    		    global uchar *pDstLine = pDst + dst_step * y + x + i;
+			    int lShift = 0;
+			    ProcessPoint(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap);
+                lShift += src_step;
+                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+                lShift += src_step;
+                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+                lShift += src_step;
+                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+                lShift += src_step;
 			}
+
+			//最右边的点
 			{
-			const global uchar *pCurLine = pSrc + src_step * y + x + diff-1;
-    		global uchar *pDstLine = pDst + dst_step * y + x + diff-1;
-			int lShift = 0;
-            ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, -1);
-            lShift += src_step;
-            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
-            lShift += src_step;
-            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
-            lShift += src_step;
-            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
-            lShift += src_step;
+			    const global uchar *pCurLine = pSrc + src_step * y + x + diff-1;
+    		    global uchar *pDstLine = pDst + dst_step * y + x + diff-1;
+			    int lShift = 0;
+                ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, -1);
+                lShift += src_step;
+                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+                lShift += src_step;
+                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+                lShift += src_step;
+                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+                lShift += src_step;
 			}
 
 		}
@@ -600,20 +623,14 @@ kernel void NLMDenoise
 		{
 			const global uchar *pCurLine = pSrc + src_step * y + x + 1;
     		global uchar *pDstLine = pDst + dst_step * y + x + 1;
-		ProcessBlock4x4(pCurLine,
-                    	pDstLine,
-                    	pMap,
-                    	src_step,
-                    	pInvMap);
+		    ProcessBlock4x4(pCurLine,
+                        	pDstLine,
+                        	pMap,
+                        	src_step,
+                        	pInvMap);
 		}
 		
 	}
-	// else if(y == 0 || y == src_rows - 1) //最上面和下面的行
-	// {
-	// 	ProcessLinesBroundMain(pCurLine, pNexLine, pDstLine, lWidth, pMap, pInvMap);
-	// }
-	// else //其他行
-	// {
-	// 	ProcessLines1Main(pCurLine, pPreLine, pNexLine, pDstLine, lWidth, pMap, pInvMap);
-	// }
+
+	
 }
