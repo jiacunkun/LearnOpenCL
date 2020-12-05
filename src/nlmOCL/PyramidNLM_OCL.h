@@ -39,6 +39,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLKernel& getKernelOfImageSubImage(int n);
             CLKernel& getKernelOfImageAddImage(int n);
             CLKernel& getKernelOfNLMDenoise(int n);
+            CLKernel& getKernelOfPyramidDown(int n);
+            CLKernel& getKernelOfPyramidUp(int n);
 
         private:
             CLProgram m_Program;

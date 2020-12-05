@@ -80,6 +80,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             nIndex = insertKernel(m_Program, "NLMDenoise");
             getKernelOfNLMDenoise(nIndex);
 
+            nIndex = insertKernel(m_Program, "PyramidDown");
+            getKernelOfPyramidDown(nIndex);
+
+            nIndex = insertKernel(m_Program, "PyramidUp");
+            getKernelOfPyramidUp(nIndex);
+
             return true;
         }
 
@@ -119,6 +125,20 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         }
 
         CLKernel& PyramidNLM_OCL::getKernelOfNLMDenoise(int n)
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfPyramidDown(int n)
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfPyramidUp(int n)
         {
             static int index = -1;
             if (index == -1) index = n;
@@ -191,7 +211,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 1; //layer of pyramid
+            int nLayer = 2; //layer of pyramid
 
             // new blank memory
             if (m_nWidth != nWidth)
@@ -206,6 +226,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             for (int i = 0; i < nLayer - 1; i++)
             {
                 PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i + 1]);
+                //PyramidUp(m_PyrDownImg[i + 1], m_PyrDownImg[i]);
             }
 
             // denoise from small layer to large layer
@@ -237,6 +258,11 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 }
             }
 
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = m_DenoiseImg[0].map();
+            //src.unmap();
+            //dst.unmap();
+
             LOGD("PyramidNLM_OCL::run--");
             return bRet;
         }
@@ -267,11 +293,24 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             bool bRet = true;
 
+#if 0
+            int src_step = src.stride(0);
+            int src_cols = src.cols();
+            int src_rows = src.rows();
+            int dst_step = dst.stride(0);
+            int dst_cols = dst.cols();
+            int dst_rows = dst.rows();
+
+            CLKernel& kernel = getKernelOfPyramidDown(0);
+            kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows); // set argument
+            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+#else
             bRet = Resize(src, dst, m_bIsBlocking);
-
-            //Mat tmp = dst.map();
-            //dst.unmap()
-
+#endif
             return bRet;
         }
 
@@ -279,10 +318,31 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             bool bRet = true;
 
+#if 0
+            int src_step = src.stride(0);
+            int src_cols = src.cols();
+            int src_rows = src.rows();
+            int dst_step = dst.stride(0);
+            int dst_cols = dst.cols();
+            int dst_rows = dst.rows();
+
+            CLKernel& kernel = getKernelOfPyramidUp(0);
+            kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows); // set argument
+            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
+#else
             bRet = Resize(src, dst, m_bIsBlocking);
 
-            //Mat tmp = dst.map();
-            //dst.unmap()
+#endif
+
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
 
             return bRet;
         }
@@ -331,11 +391,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            Mat tmpsrc = src.map();
-            Mat tmpdst = dst.map();
-
-            src.unmap();
-            dst.unmap();
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
 
             LOGD("NLMDenoise--");
             return bRet;

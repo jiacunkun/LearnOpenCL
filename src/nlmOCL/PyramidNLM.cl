@@ -30,6 +30,98 @@
     lSumW += lNVal * lTmpW;                                                    \
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// 编写kernel
+////////////////////////////////////////////////////////////////////////////////
+#define GAUSS_121(a0,a1,a2) ((a0)+(2 * a1) + (a2))
+	/*Pyr3x3s2Down_f32in_f32out_kernel*/
+		
+		kernel void PyramidDown
+		(
+			global uchar* pSrc,
+			int Src_Pitch,
+			int Src_Width,
+			int Src_Height,
+			global uchar* pDst,
+			int Dst_Pitch,
+			int Dst_Width,
+			int Dst_Height
+		)
+		{
+			int idx = get_global_id(0);//dst_width
+			int idy = get_global_id(1);
+
+			int idx_x2 = idx << 1;
+			int idy_x2 = idy << 1;
+
+			int y_pre = max(0,idy_x2-1);//(idy_x2 - 1) < 0 ? 0 : (idy_x2 - 1);
+			int y_cur = idy_x2;
+			int y_next = min(idy_x2+1,Src_Height-1);//(idy_x2 + 1) > (Src_Height - 1) ? (Src_Height - 1) : (idy_x2 + 1);
+
+			int x_pre = max(0,idx_x2-1);//(idx_x2 - 1) < 0 ? 0 : (idx_x2 - 1);
+			int x_cur = idx_x2;
+			int x_next = min(idx_x2+1,Src_Width-1);//(idx_x2 + 1) > (Src_Width - 1) ? (Src_Width - 1) : (idx_x2 + 1);
+
+			__global uchar* src0 = (__global uchar*)(pSrc + y_pre * Src_Pitch);
+			__global uchar* src1 = (__global uchar*)(pSrc + y_cur * Src_Pitch);
+			__global uchar* src2 = (__global uchar*)(pSrc + y_next * Src_Pitch);
+
+			__global uchar* dst = (__global uchar*)(pDst + idy * Dst_Pitch);
+
+			int r0 = GAUSS_121(src0[x_pre], src0[x_cur], src0[x_next]);
+			int r1 = GAUSS_121(src1[x_pre], src1[x_cur], src1[x_next]);
+			int r2 = GAUSS_121(src2[x_pre], src2[x_cur], src2[x_next]);
+
+			int out = GAUSS_121(r0, r1, r2);
+			out = (out+8)/16;
+			out = MIN(255, out);
+
+			dst[idx] = out;
+
+			return;
+		}
+
+/*BilinearResize_kernel*/
+kernel void PyramidUp(
+global uchar *src_ptr,
+const int src_step,
+const int src_cols,
+const int src_rows,
+global uchar *dst_ptr,
+const int dst_step,
+const int dst_cols,
+const int dst_rows
+)
+{
+	const int x = get_global_id(0);
+	const int y = get_global_id(1);
+
+	float hor_scale = (float)src_cols / (float)dst_cols;
+	float ver_scale = (float)src_rows / (float)dst_rows;
+
+	float pos = ((float)x + 0.5f) * hor_scale;
+	int left_pos = (int)fmax(pos - 0.5f, 0.0f);
+	int right_pos = (int)fmin(pos + 0.5f, (float)src_cols - 1.0f);
+	float hor_weight = fabs(pos - 0.5f - (float)left_pos);
+
+	pos = ((float)y + 0.5f) * ver_scale;
+	int top_pos = (int)fmax(pos - 0.5f, 0.0f);
+	int bottom_pos = (int)fmin(pos + 0.5f, (float)src_rows - 1.0f);
+	float ver_weight = fabs(pos - 0.5f - (float)top_pos);
+
+	float data00 = (float)src_ptr[mad24(src_step, top_pos, left_pos)];
+	float data01 = (float)src_ptr[mad24(src_step, top_pos, right_pos)];
+	float data10 = (float)src_ptr[mad24(src_step, bottom_pos, left_pos)];
+	float data11 = (float)src_ptr[mad24(src_step, bottom_pos, right_pos)];
+
+	float tmp0 = data00 + (data01 - data00) * hor_weight;
+	float tmp1 = data10 + (data11 - data10) * hor_weight;
+	float res = tmp0 + (tmp1 - tmp0) * ver_weight;
+	dst_ptr[mad24(dst_step, y, x)] = (unsigned char)clamp(res, 0.0f, 255.0f);
+
+	return;
+}
+
 kernel void Resize
 (
 	const global uchar *src,

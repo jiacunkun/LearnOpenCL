@@ -80,21 +80,24 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         // copy CPU data to GPU
         lRet = y_clmat.copyFrom(y_mat);
         lRet &= uv_clmat.copyFrom(uv_mat);
-        //uv_clmat.copyTo(y_clmat); //测试拷贝
 
         // run GPU
         {
-            lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, true);
-            lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
+            lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, false);
+            //lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
         }
 
 
         // copy GPU data to CPU
-        acv::Mat y_dst_mat(pSrc->i32Height, pSrc->i32Width, ACV_8UC1); // create a buffer on the host
+        acv::Mat y_dst_mat(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[0],
+            pDst->pi32Pitch[0]); // create a buffer on the host
         lRet &= y_clmat.copyTo(y_dst_mat); // copy the result to the host
         acv::Mat uv_dst_mat(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[1],
                             pDst->pi32Pitch[1]); // create a buffer on the host
         lRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
+
+        memcpy(pDst->ppu8Plane[0], y_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[0]);
+        memcpy(pDst->ppu8Plane[1], uv_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[1] /2);
 
     }
 
