@@ -18,6 +18,18 @@
     }
 #endif
 
+//用于NLM
+#define ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pInvMap)        \
+{                                                                            \
+    lDif = ABS(lCVal - lNVal);                                                \
+    lDif = MIN(49,lDif);                                                    \
+    lDif = lDif * 9;                                                        \
+    lTmpW = pInvMap[lDif];                                                    \
+    lTmpW >>= 1;                                                            \
+    lWSum += lTmpW;                                                            \
+    lSumW += lNVal * lTmpW;                                                    \
+}
+
 kernel void Resize
 (
 	const global uchar *src,
@@ -343,6 +355,174 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
         GetBlockResult(pDstLine, lPitch, lSumWei, pInvMap);
     }
 
+// 单行降噪
+inline void ProcessLinesBroundMain(const global uchar *pCurLine,
+                                          const global uchar *pPreLine, 
+                                           global uchar *pDstLine,
+                                          int lWidth,
+                                          const global int *pMap,
+                                          const global int *pInvMap)
+    {
+        int lWSum = 0;
+        int lSumW = 0;
+        int lCVal = 0, lNVal = 0;
+        int lDVal = 0;
+        int lTmpW = 0;
+        int lInvW = 0;
+        int lDif = 0;
+        int x = 0;
+        //left point
+        lCVal = pCurLine[ 0 ];
+        lWSum = 256;
+        lSumW = 256 * lCVal;
+        lNVal = pCurLine[ 1 ];
+
+        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+        lNVal = pPreLine[ 0 ];
+        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+        lNVal = pPreLine[ 1 ];
+        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+
+        lInvW = pInvMap[ lWSum ];
+        lDVal = ( lSumW * lInvW + ( 1 << 19 )) >> 20;
+        //pDstLine[0] = (lDVal - lCVal >> 1) + 128;
+        pDstLine[ 0 ] = lDVal;
+
+        //med point
+        for(x = 1; x < lWidth - 1; x++)
+        {
+            lCVal = pCurLine[ x ];
+            lWSum = 256;
+            lSumW = 256 * lCVal;
+
+            lNVal = pCurLine[ x - 1 ];
+            ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+            lNVal = pCurLine[ x + 1 ];
+            ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+
+            lNVal = pPreLine[ x - 1 ];
+            ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+            lNVal = pPreLine[ x ];
+            ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+            lNVal = pPreLine[ x + 1 ];
+            ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+
+            lInvW = pInvMap[ lWSum ];
+            lDVal = ( lSumW * lInvW + +( 1 << 19 )) >> 20;
+            pDstLine[ x ] = lDVal;
+            //pDstLine[x] = (lDVal - lCVal >> 1) + 128;
+        }
+
+        //right point
+        lCVal = pCurLine[ lWidth - 1 ];
+        lWSum = 256;
+        lSumW = 256 * lCVal;
+
+        lNVal = pCurLine[ lWidth - 2 ];
+        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+        lNVal = pPreLine[ lWidth - 2 ];
+        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+        lNVal = pPreLine[ lWidth - 1 ];
+        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
+
+        lInvW = pInvMap[ lWSum ];
+        lDVal = ( lSumW * lInvW + ( 1 << 19 )) >> 20;
+        pDstLine[ lWidth - 1 ] = lDVal;
+    }
+
+ inline void ProcessPointBround(const global uchar *pCurPoint,
+                                      const global uchar *pPrePoint,
+                                      const global uchar *pNexPoint,
+                                       global uchar *pDstPoint,
+                                      const global int *pMap,
+                                      const global int *pInvMap,
+                                      int l_add)
+    {
+        int lNVal = 0;
+        int lDif = 0, lTmpW = 0;
+        int lInvW = 0, lDVal = 0;
+
+        int nCurrentVal = pCurPoint[ 0 ];
+        int nWeight = 256;
+        int nAverage = nCurrentVal * 256;
+
+        lNVal = pCurPoint[ l_add ];
+        ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+
+        lNVal = pPrePoint[ 0 ];
+        ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+        lNVal = pPrePoint[ l_add ];
+        ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+
+        lNVal = pNexPoint[ 0 ];
+        ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+        lNVal = pNexPoint[ l_add ];
+        ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+
+        lInvW = pInvMap[ nWeight ];
+        lDVal = ( nAverage * lInvW + ( 1 << 19 )) >> 20;
+        pDstPoint[ 0 ] = lDVal;
+    }
+
+inline void ProcessPoint(const global uchar *pCurPoint,
+                                const global uchar *pPrePoint,
+                                const global uchar *pNexPoint,
+                                global uchar *pDstPoint,
+                                const global int *pMap,
+                                const global int *pInvMap)
+    {
+        int lDif = 0;
+        int lTmpW = 0;
+
+        int nCurrentVal = pCurPoint[ 0 ];
+        int nWeight = 256;
+        int nAverage = nCurrentVal * nWeight;
+
+        ADD_POINT_WEI(pCurPoint[ -1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+        ADD_POINT_WEI(pCurPoint[ 1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+
+        ADD_POINT_WEI(pPrePoint[ -1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+        ADD_POINT_WEI(pPrePoint[ 0 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+        ADD_POINT_WEI(pPrePoint[ 1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+
+        ADD_POINT_WEI(pNexPoint[ -1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+        ADD_POINT_WEI(pNexPoint[ 0 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+        ADD_POINT_WEI(pNexPoint[ 1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
+
+        int lInvW = pInvMap[ nWeight ];
+        int lDVal = ( nAverage * lInvW + ( 1 << 19 )) >> 20;
+        pDstPoint[ 0 ] = lDVal;
+    }
+
+	inline void ProcessLines1Main(const global uchar *pCurLine,
+                                    const global uchar *pPreLine,
+                                    const global uchar *pNexLine,
+                                    global uchar *pDstLine,
+                                    int lWidth,
+                                    const global int *pMap,
+                                    const global int *pInvMap)
+    {
+        //left point
+        ProcessPointBround(pCurLine, pPreLine, pNexLine, pDstLine, pMap, pInvMap, 1);
+
+        //med point
+        pCurLine++;
+        pPreLine++;
+        pNexLine++;
+        pDstLine++;
+        for(int x = 1; x <= 4; x++)
+        {
+            ProcessPoint(pCurLine, pPreLine, pNexLine, pDstLine, pMap, pInvMap);
+            pCurLine++;
+            pPreLine++;
+            pNexLine++;
+            pDstLine++;
+        }
+
+        //right point
+        ProcessPointBround(pCurLine, pPreLine, pNexLine, pDstLine, pMap, pInvMap, -1);
+    }
+
 
 kernel void NLMDenoise
 (
@@ -359,19 +539,81 @@ kernel void NLMDenoise
 )
 {
     //获取当前图像行和列
-    int x = get_global_id(0)*4 + 1;
+    int x = get_global_id(0)*4;
 	int y = get_global_id(1)*4 + 1;
 
+	const global uchar *pCurLine = pSrc + src_step * y + x;
+    global uchar *pDstLine = pDst + dst_step * y + x;
 
-	if (x >= 0 && x < src_cols - 4 && y >= 0 && y < src_rows - 4)
+   
+    //中间数据处理
+	if (y >= 1 && y < src_rows - 4)
     {
-		const global uchar *pCurLine = pSrc + src_step * y + x;
-    	global uchar *pDstLine = pDst + dst_step * y + x;
+		if (x == 0)
+		{
+			const global uchar *pCurLine = pSrc + src_step * y + x;
+    		global uchar *pDstLine = pDst + dst_step * y + x;
+			int lShift = 0;
+            ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, 1);
+            lShift += src_step;
+            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
+            lShift += src_step;
+            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
+            lShift += src_step;
+            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
+            lShift += src_step;
+		}
+		else if (src_cols - x <= 4)
+		{
+			int diff = src_cols - x;
+			for (int i = 0; i < diff-1; i++)
+			{
+			const global uchar *pCurLine = pSrc + src_step * y + x + i;
+    		global uchar *pDstLine = pDst + dst_step * y + x + i;
+			int lShift = 0;
+			ProcessPoint(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap);
+            lShift += src_step;
+            ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+            lShift += src_step;
+            ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+            lShift += src_step;
+            ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+            lShift += src_step;
+			}
+			{
+			const global uchar *pCurLine = pSrc + src_step * y + x + diff-1;
+    		global uchar *pDstLine = pDst + dst_step * y + x + diff-1;
+			int lShift = 0;
+            ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, -1);
+            lShift += src_step;
+            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+            lShift += src_step;
+            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+            lShift += src_step;
+            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+            lShift += src_step;
+			}
 
+		}
+		
+		if (x >=0 && x < src_cols - 4)
+		{
+			const global uchar *pCurLine = pSrc + src_step * y + x + 1;
+    		global uchar *pDstLine = pDst + dst_step * y + x + 1;
 		ProcessBlock4x4(pCurLine,
                     	pDstLine,
                     	pMap,
                     	src_step,
                     	pInvMap);
+		}
+		
 	}
+	// else if(y == 0 || y == src_rows - 1) //最上面和下面的行
+	// {
+	// 	ProcessLinesBroundMain(pCurLine, pNexLine, pDstLine, lWidth, pMap, pInvMap);
+	// }
+	// else //其他行
+	// {
+	// 	ProcessLines1Main(pCurLine, pPreLine, pNexLine, pDstLine, lWidth, pMap, pInvMap);
+	// }
 }
