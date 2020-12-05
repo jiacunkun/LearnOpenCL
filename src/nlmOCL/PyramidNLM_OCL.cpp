@@ -164,8 +164,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
             }
             bRet &= SplitNV21Channel(srcUV, u, v);
-            //bRet &= run(u, u, fNoiseVarUV, true);
-            //bRet &= run(v, v, fNoiseVarUV, true);
+            bRet &= run(u, u, fNoiseVarUV, true);
+            bRet &= run(v, v, fNoiseVarUV, true);
 
 //            Mat tmp = srcUV.map();
 //            Mat tmpU = u.map();
@@ -192,10 +192,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nWidth = src.cols();
             int nHeight = src.rows();
             int nLayer = 1; //layer of pyramid
-            
 
             // new blank memory
-            initBuffer(nWidth, nHeight, nStep, nLayer);
+            if (m_nWidth != nWidth)
+            {
+                initBuffer(nWidth, nHeight, nStep, nLayer);
+                m_nWidth = nWidth;
+            }
 
             // build pyramid
             src.copyTo(m_PyrDownImg[0]);
@@ -328,11 +331,11 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-//            Mat tmpsrc = src.map();
-//            Mat tmpdst = dst.map();
-//
-//            src.unmap();
-//            dst.unmap();
+            Mat tmpsrc = src.map();
+            Mat tmpdst = dst.map();
+
+            src.unmap();
+            dst.unmap();
 
             LOGD("NLMDenoise--");
             return bRet;
@@ -430,12 +433,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            //Mat tmp = uv.map();
-            //Mat tmpU = u.map();
-            //Mat tmpV = v.map();
-            //uv.unmap();
-            //u.unmap();
-            //v.unmap();
+//            Mat tmp = uv.map();
+//            Mat tmpU = u.map();
+//            Mat tmpV = v.map();
+//            uv.unmap();
+//            u.unmap();
+//            v.unmap();
 
             return bRet;
         }
