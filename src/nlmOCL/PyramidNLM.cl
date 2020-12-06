@@ -217,7 +217,7 @@ kernel void MergeNV21Channel
 	int y = get_global_id(1);
 
 	uvDst[y*dst_step + x*2] = uSrc[y*src_step + x];
-	uvDst[y*dst_step + x*2 + 1] = uSrc[y*src_step + x];
+	uvDst[y*dst_step + x*2 + 1] = vSrc[y*src_step + x];
 }
 
 

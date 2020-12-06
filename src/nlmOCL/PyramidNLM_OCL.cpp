@@ -187,13 +187,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bRet &= run(u, u, fNoiseVarUV, true);
             bRet &= run(v, v, fNoiseVarUV, true);
 
-//            Mat tmp = srcUV.map();
-//            Mat tmpU = u.map();
-//            Mat tmpV = v.map();
-//
-//            srcUV.unmap();
-//            u.unmap();
-//            v.unmap();
+            //Mat tmp = srcUV.map();
+            //Mat tmpU = u.map();
+            //Mat tmpV = v.map();
+            //srcUV.unmap();
+            //u.unmap();
+            //v.unmap();
 
             bRet &= MergeNV21Channel(u, v, dstUV);
 
@@ -492,12 +491,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-//            Mat tmp = uv.map();
-//            Mat tmpU = u.map();
-//            Mat tmpV = v.map();
-//            uv.unmap();
-//            u.unmap();
-//            v.unmap();
+            //Mat tmp = uv.map();
+            //Mat tmpU = u.map();
+            //Mat tmpV = v.map();
+            //uv.unmap();
+            //u.unmap();
+            //v.unmap();
 
             return bRet;
         }
