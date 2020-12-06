@@ -96,8 +96,8 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
                             pDst->pi32Pitch[1]); // create a buffer on the host
         lRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
 
-        memcpy(pDst->ppu8Plane[0], y_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[0]);
-        memcpy(pDst->ppu8Plane[1], uv_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[1] /2);
+        //memcpy(pDst->ppu8Plane[0], y_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[0]);
+        //memcpy(pDst->ppu8Plane[1], uv_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[1] /2);
 
     }
 

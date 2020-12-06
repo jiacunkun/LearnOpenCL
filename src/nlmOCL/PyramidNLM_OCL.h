@@ -50,7 +50,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int m_nWidth = 0;
             int m_nHeight = 0;
             int m_nStep = 0;
-            bool m_bIsBlocking = false;
+            bool m_bIsBlocking = true;
 
         private:
             // NLM降噪查表数据

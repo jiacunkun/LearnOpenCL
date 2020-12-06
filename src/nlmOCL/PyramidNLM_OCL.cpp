@@ -183,23 +183,33 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
                 v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
             }
+
+            CLMat u_dst, v_dst;
+            //if (u.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	u_dst.create_with_svm(srcUV.height() / 2, srcUV.width(), ACV_8UC1);
+            //	v_dst.create_with_svm(srcUV.height() / 2, srcUV.width(), ACV_8UC1);
+            //}
+            //else
+            {
+                u_dst.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
+                v_dst.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
+            }
             bRet &= SplitNV21Channel(srcUV, u, v);
-            bRet &= run(u, u, fNoiseVarUV, true);
-            bRet &= run(v, v, fNoiseVarUV, true);
+            bRet &= run(u, u_dst, fNoiseVarUV, true);
+            bRet &= run(v, v_dst, fNoiseVarUV, true);
 
-            //Mat tmp = srcUV.map();
-            //Mat tmpU = u.map();
-            //Mat tmpV = v.map();
-            //srcUV.unmap();
+            //Mat tmpSrc = u.map();
+            //Mat tmpDst = u_dst.map();
             //u.unmap();
-            //v.unmap();
+            //u_dst.unmap();
 
-            bRet &= MergeNV21Channel(u, v, dstUV);
+            bRet &= MergeNV21Channel(u_dst, v_dst, dstUV);
 
-            Mat tmpSrc = srcUV.map();
-            Mat tmpDst = dstUV.map();
-            srcUV.unmap();
-            dstUV.unmap();
+            //Mat tmpSrc = srcUV.map();
+            //Mat tmpDst = dstUV.map();
+            //srcUV.unmap();
+            //dstUV.unmap();
 
             return bRet;
         }
@@ -214,7 +224,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 3; //layer of pyramid
+            int nLayer = 4; //layer of pyramid
 
             // new blank memory
             if (m_nWidth != nWidth)
@@ -401,10 +411,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            Mat tmpsrc = src.map();
-            Mat tmpdst = dst.map();
-            src.unmap();
-            dst.unmap();
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
 
             LOGD("NLMDenoise--");
             return bRet;
@@ -502,7 +512,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            Mat tmp = uv.map();
+            //Mat tmp = uv.map();
             //Mat tmpU = u.map();
             //Mat tmpV = v.map();
             //uv.unmap();
