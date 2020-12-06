@@ -196,6 +196,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             bRet &= MergeNV21Channel(u, v, dstUV);
 
+            Mat tmpSrc = srcUV.map();
+            Mat tmpDst = dstUV.map();
+            srcUV.unmap();
+            dstUV.unmap();
 
             return bRet;
         }
@@ -210,7 +214,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 2; //layer of pyramid
+            int nLayer = 3; //layer of pyramid
 
             // new blank memory
             if (m_nWidth != nWidth)
@@ -226,6 +230,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             {
                 PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i + 1]);
                 //PyramidUp(m_PyrDownImg[i + 1], m_PyrDownImg[i]);
+                m_PyrDownImg[i + 1].copyTo(m_TempImg[i + 1]);
             }
 
             // denoise from small layer to large layer
@@ -235,7 +240,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 fTmpVar = MAX(1.0f, fTmpVar);
 
                 bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
-                bRet &= ImageSubImage(m_DenoiseImg[i], m_PyrDownImg[i]);
+                bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]);
                 bRet &= PyramidUp(m_DenoiseImg[i], m_DenoiseImg[i - 1]);
                 bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
             }
@@ -310,6 +315,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #else
             bRet = Resize(src, dst, m_bIsBlocking);
 #endif
+
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
+
             return bRet;
         }
 
@@ -491,7 +502,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            //Mat tmp = uv.map();
+            Mat tmp = uv.map();
             //Mat tmpU = u.map();
             //Mat tmpV = v.map();
             //uv.unmap();
