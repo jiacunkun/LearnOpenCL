@@ -224,7 +224,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 2; //layer of pyramid
+            int nLayer = 4; //layer of pyramid
 
             // new blank memory
             if (m_nWidth != nWidth)
@@ -239,7 +239,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             for (int i = 0; i < nLayer - 1; i++)
             {
                 PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i + 1]);
-                PyramidUp(m_PyrDownImg[i + 1], m_PyrDownImg[i]);
+                //PyramidUp(m_PyrDownImg[i + 1], m_PyrDownImg[i]);
                 m_PyrDownImg[i + 1].copyTo(m_TempImg[i + 1]);
             }
 
@@ -328,10 +328,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bRet = Resize(src, dst, m_bIsBlocking);
 #endif
 
-            Mat tmpsrc = src.map();
-            Mat tmpdst = dst.map();
-            src.unmap();
-            dst.unmap();
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
 
             LOGD("PyramidDown--");
             return bRet;
@@ -364,10 +364,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 #endif
 
-            Mat tmpsrc = src.map();
-            Mat tmpdst = dst.map();
-            src.unmap();
-            dst.unmap();
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
 
             LOGD("PyramidUp--");
             return bRet;

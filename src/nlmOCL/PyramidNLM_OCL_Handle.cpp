@@ -8,31 +8,47 @@
 
 USING_NS_SINFLE_IMAGE_ENHANCEMENT
 
+MInt32 PyramidNLM_OCL_Init()
+{
+    // init env
+    if (g_is_initialized)
+    {
+        LOG(WARNING) << "MFSR is already initilized and don't initilize it twice.";
+        return MERR_INVALID_PARAM;
+    }
 
+
+    if (!initializeOCL(g_ocl_initializer))  // ocl initializing must be ahead of every
+    {
+        return MERR_INVALID_PARAM;
+    }
+
+    g_is_initialized = true;
+
+    return 0;
+
+}
+
+MVoid PyramidNLM_OCL_Uninit()
+{
+    // release env
+
+    if (!g_is_initialized)
+    {
+        LOG(ERROR) << "mfsr is not initilized before calling EX_Uninit or It is already uninitialized.";
+        return;
+    }
+
+    g_ocl_initializer.unInit(); // uninitializtion for ocl should be the most tail of the library
+    g_is_initialized = false;
+
+}
 
 MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV)
 {
     LOGD("PyramidNLM_OCL_Handle++");
 
     MInt32 lRet = 0;
-
-    // init env
-    {
-        if (g_is_initialized)
-        {
-            LOG(WARNING) << "MFSR is already initilized and don't initilize it twice.";
-            return MERR_INVALID_PARAM;
-        }
-
-
-        if (!initializeOCL(g_ocl_initializer))  // ocl initializing must be ahead of every
-        {
-            return MERR_INVALID_PARAM;
-        }
-
-        g_is_initialized = true;
-
-    }
 
     // run
     {
@@ -76,19 +92,6 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         //memcpy(pDst->ppu8Plane[0], y_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[0]);
         //memcpy(pDst->ppu8Plane[1], uv_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[1] /2);
 
-    }
-
-
-    // release env
-    {
-        if (!g_is_initialized)
-        {
-            LOG(ERROR) << "mfsr is not initilized before calling EX_Uninit or It is already uninitialized.";
-            return -1;
-        }
-
-        g_ocl_initializer.unInit(); // uninitializtion for ocl should be the most tail of the library
-        g_is_initialized = false;
     }
 
     LOGD("PyramidNLM_OCL_Handle++");

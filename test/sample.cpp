@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     MInt32 lScale = 1;
     MInt32 pSharpenIntensity[4] = { 0 };
 
-    sprintf(filename, "E:\\svn\\NLM_OCL\\data\\ISO00304_043_1_4624x3472_[0]_50-0-50-0-0-0-80-0-0-0-0-1-0-1-0-1-0-0-0-0-0-0-0--1-0-0-0-ISO=0-CamType=0-fZoomValue=1.000000_res.NV21");
+    sprintf(filename, "E:\\svn\\NLM_OCL\\data\\IMG_20201116104745_0_4000x3000_iso_466_crop_1011_697_2012_1509.nv12");
 
     lret = ParseWidthHeight(filename, &height, &width);
     if (lret != 0)
@@ -114,9 +114,11 @@ int main(int argc, char* argv[])
 
     // run demo
     {
-        MFloat fNoiseVarY = 20;
-        MFloat fNoiseVarUV = 20;
+        MFloat fNoiseVarY = 100;
+        MFloat fNoiseVarUV = 100;
+        PyramidNLM_OCL_Init();
         lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
+        PyramidNLM_OCL_Uninit();
     }
 
     if (1)
