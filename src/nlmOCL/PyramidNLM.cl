@@ -689,16 +689,15 @@ kernel void NLMDenoise
     int x = get_global_id(0)*4;
 	int y = get_global_id(1)*4 + 1;
 
-
-
-   
-     if (y == 1) //最上面一行
+	// 第一行
+     if (y == 1) 
      {
         const global uchar *pCurLine = pSrc + src_step * (y - 1) + x;
         global uchar *pDstLine = pDst + dst_step * (y - 1) + x;
      	ProcessLinesBroundMain(pCurLine, pCurLine + src_step, pDstLine, src_cols, pMap, pInvMap);
      }
 
+	// 最后几行
 	 if (src_rows - y <= 4)
      {
      	int diff = src_rows - y;
@@ -715,8 +714,10 @@ kernel void NLMDenoise
 		}
 	 }
 
+	// 中间行
 	if (y >= 1 && y < src_rows - 4)
     {
+		// 最左边的点
 		if (x == 0)
 		{
 			const global uchar *pCurLine = pSrc + src_step * y + x;
@@ -731,6 +732,7 @@ kernel void NLMDenoise
             ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
             lShift += src_step;
 		}
+		// 最右边的几个点
 		else if (src_cols - x <= 4)
 		{
 			int diff = src_cols - x;
@@ -766,6 +768,7 @@ kernel void NLMDenoise
 
 		}
 		
+		// 中间点
 		if (x >=0 && x < src_cols - 4)
 		{
 			const global uchar *pCurLine = pSrc + src_step * y + x + 1;
