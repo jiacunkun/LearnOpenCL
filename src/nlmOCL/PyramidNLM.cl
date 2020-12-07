@@ -171,7 +171,7 @@ kernel void PyramidUp(global uchar *src_ptr,
 
 	float tmp0 = data00 + (data01 - data00) * hor_weight;
 	float tmp1 = data10 + (data11 - data10) * hor_weight;
-	float res = tmp0 + (tmp1 - tmp0) * ver_weight;
+	float res = tmp0 + (tmp1 - tmp0) * ver_weight + 0.5;
 	dst_ptr[mad24(dst_step, y, x)] = (unsigned char)clamp(res, 0.0f, 255.0f);
 
 	return;
@@ -229,7 +229,7 @@ kernel void Resize
 	float2 v_alpha = (float2)(1.0f - alpha, alpha );
 	float a0 = dot(A00, v_alpha);
 	float a1 = dot(A10, v_alpha);
-	dst[y*dst_step + x] = (uchar)(a0 + (a1 - a0) * beta);
+	dst[y*dst_step + x] = (uchar)(a0 + (a1 - a0) * beta + 0.5);
 }
 
 kernel void SplitNV21Channel
