@@ -28,9 +28,6 @@ namespace arc_example
     }
 }
 
-static bool g_is_initialized = false;
-static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // init env handle
-
 // load data from external file
 bool initializeOCL(arc_example::ocl::OCLInitilizerExample& ocl_initializer)
 {

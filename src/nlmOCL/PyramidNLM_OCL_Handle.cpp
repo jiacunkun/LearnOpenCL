@@ -8,6 +8,9 @@
 
 USING_NS_SINFLE_IMAGE_ENHANCEMENT
 
+static bool g_is_initialized = false;
+static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // init env handle
+
 MInt32 PyramidNLM_OCL_Init()
 {
     // init env
@@ -17,8 +20,9 @@ MInt32 PyramidNLM_OCL_Init()
         return MERR_INVALID_PARAM;
     }
 
+    bool bRet = initializeOCL(g_ocl_initializer);
 
-    if (!initializeOCL(g_ocl_initializer))  // ocl initializing must be ahead of every
+    if (!bRet)  // ocl initializing must be ahead of every
     {
         return MERR_INVALID_PARAM;
     }

@@ -7,7 +7,11 @@
 extern "C" {
 #endif
 
+    MInt32 PyramidNLM_OCL_Init();
+
     MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV);
+
+    MVoid PyramidNLM_OCL_Uninit();
 
 #ifdef __cplusplus
 }
