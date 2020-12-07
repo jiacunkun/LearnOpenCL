@@ -21,7 +21,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
         private:
-            bool NLMDenoise(CLMat &src, CLMat& dst, float fNoiseVar, CLMat& map_clmat, CLMat& invMap_clmat);
+            bool NLMDenoise(CLMat &src, CLMat& dst, float fNoiseVar);
 
         private:
             bool PyramidUp(CLMat &src, CLMat& dst);

@@ -187,31 +187,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             bool bRet = true;
 
-            // calculate map of NLM
-            if (m_fNoiseVar != fNoiseVar)
-            {
-                MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
-                m_fNoiseVar = fNoiseVar;
-            }
-
-            Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
-            Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, m_pInvMap);
-
-            CLMat m_map_clmat, m_invMap_clmat;
-            //if (m_map_clmat.is_svm_available()) // an eample to use SVM buffer
-            //{
-            //	m_map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //	m_invMap_clmat.create_with_svm(1, 256 * 9 + 1, ACV_32SC1);
-            //}
-            //else
-            {
-                m_map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
-                m_invMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
-            }
-
-            m_map_clmat.copyFrom(map_mat);
-            m_invMap_clmat.copyFrom(invMap_mat);
-
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
@@ -247,7 +222,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 float fTmpVar = fNoiseVar * fPow[i];;
                 fTmpVar = MAX(1.0f, fTmpVar);
 
-                bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar, m_map_clmat, m_invMap_clmat);
+                bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
                 bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]);
                 bRet &= PyramidUp(m_DenoiseImg[i], m_DenoiseImg[i - 1]);
                 bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
@@ -261,7 +236,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                     float fTmpVar = fNoiseVar * fPow[i];;
                     fTmpVar = MAX(1.0f, fTmpVar);
 
-                    bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar, m_map_clmat, m_invMap_clmat);
+                    bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
                     m_DenoiseImg[0].copyTo(dst);// copy result to output
                 }
                 else
@@ -371,10 +346,34 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return bRet;
         }
 
-        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar, CLMat& map_clmat, CLMat& invMap_clmat)
+        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar)
         {
             LOGD("NLMDenoise++");
             bool bRet = true;
+
+            if (m_fNoiseVar != fNoiseVar)
+            {
+                MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
+                m_fNoiseVar = fNoiseVar;
+            }
+
+            Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
+            Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, m_pInvMap);
+
+            CLMat map_clmat, invMap_clmat;
+            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
+            //	invMap_clmat.create_with_svm(1, 256 * 9 + 1, ACV_32SC1);
+            //}
+            //else
+            {
+                map_clmat.create_with_clmem(1, 16*50, ACV_32SC1);
+                invMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
+            }
+
+            map_clmat.copyFrom(map_mat);
+            invMap_clmat.copyFrom(invMap_mat);
 
             int src_step = src.stride(0);
             int src_cols = src.cols();
