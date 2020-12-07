@@ -44,9 +44,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         private:
             CLProgram m_Program;
-            CLMat m_PyrDownImg[4];
-            CLMat m_DenoiseImg[4];
-            CLMat m_TempImg[4];
             int m_nWidth = 0;
             int m_nHeight = 0;
             int m_nStep = 0;

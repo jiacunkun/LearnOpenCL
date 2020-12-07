@@ -148,15 +148,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 		void PyramidNLM_OCL::initBuffer(int nWidth, int nHeight, int nStep, int nLayer)
 		{
 
-			LOGD("initBuffer++");
-			for (int i = 0; i < nLayer; i++)
-			{			
-				m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-				m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-				m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-			}
-			LOGD("initBuffer--");
-
+			
 		}
 
         bool PyramidNLM_OCL::runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
@@ -201,11 +193,18 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nLayer = 4; //layer of pyramid
 
             // new blank memory
-            if (m_nWidth != nWidth)
+            CLMat m_PyrDownImg[4];
+            CLMat m_DenoiseImg[4];
+            CLMat m_TempImg[4];
+            LOGD("initBuffer++");
+            for (int i = 0; i < nLayer; i++)
             {
-                initBuffer(nWidth, nHeight, nStep, nLayer);
-                m_nWidth = nWidth;
+                m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
             }
+            LOGD("initBuffer--");
+
 
             // build pyramid
             src.copyTo(m_PyrDownImg[0]);
@@ -362,12 +361,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, m_pInvMap);
 
             CLMat map_clmat, invMap_clmat;
-            if (map_clmat.is_svm_available()) // an eample to use SVM buffer
-            {
-            	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            	invMap_clmat.create_with_svm(1, 256 * 9 + 1, ACV_32SC1);
-            }
-            else
+            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
+            //	invMap_clmat.create_with_svm(1, 256 * 9 + 1, ACV_32SC1);
+            //}
+            //else
             {
                 map_clmat.create_with_clmem(1, 16*50, ACV_32SC1);
                 invMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
