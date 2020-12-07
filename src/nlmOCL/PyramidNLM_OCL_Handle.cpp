@@ -8,30 +8,7 @@
 
 USING_NS_SINFLE_IMAGE_ENHANCEMENT
 
-bool runPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0)
-{
-    if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
-    {
-        LOG(ERROR) << "The object is not created. Please call GSampleResizeOCLRetriever::registerToGlobalHolder to register";
-        return false;
 
-    }
-
-    return GPyramidNLM_OCLRetriever::get().run(src, dst, fNoiseVar, bIsDenoiseFor0);
-
-}
-
-bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
-{
-    if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
-    {
-        LOG(ERROR) << "The object is not created. Please call GSampleResizeOCLRetriever::registerToGlobalHolder to register";
-        return false;
-
-    }
-
-    return GPyramidNLM_OCLRetriever::get().runUV(srcUV, dstUV, fNoiseVarUV);
-}
 
 MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV)
 {

@@ -60,6 +60,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类
+        bool runPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
+
+        bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END

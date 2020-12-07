@@ -305,6 +305,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::PyramidDown(CLMat& src, CLMat& dst)
         {
+            LOGD("PyramidDown++");
+
             bool bRet = true;
 
 #if 0
@@ -331,11 +333,14 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //src.unmap();
             //dst.unmap();
 
+            LOGD("PyramidDown--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::PyramidUp(CLMat& src, CLMat& dst)
         {
+            LOGD("PyramidUp++");
+
             bool bRet = true;
 
 #if 0
@@ -364,6 +369,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //src.unmap();
             //dst.unmap();
 
+            LOGD("PyramidUp--");
             return bRet;
         }
 
@@ -522,6 +528,29 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return bRet;
         }
 
+        bool runPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0)
+        {
+            if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
+            {
+                LOG(ERROR) << "The object is not created. Please call GSampleResizeOCLRetriever::registerToGlobalHolder to register";
+                return false;
 
+            }
+
+            return GPyramidNLM_OCLRetriever::get().run(src, dst, fNoiseVar, bIsDenoiseFor0);
+
+        }
+
+        bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
+        {
+            if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
+            {
+                LOG(ERROR) << "The object is not created. Please call GSampleResizeOCLRetriever::registerToGlobalHolder to register";
+                return false;
+
+            }
+
+            return GPyramidNLM_OCLRetriever::get().runUV(srcUV, dstUV, fNoiseVarUV);
+        }
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END
