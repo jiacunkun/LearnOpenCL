@@ -63,12 +63,12 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
                         pSrc->pi32Pitch[1]); // set pointer to a Mat
         acv::ocl::CLMat y_clmat;
         acv::ocl::CLMat uv_clmat;
-        //if (y_clmat.is_svm_available()) // an eample to use SVM buffer
-        //{
-        //	y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
-        //	uv_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
-        //}
-        //else
+        if (y_clmat.is_svm_available()) // an eample to use SVM buffer
+        {
+        	y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
+            uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
+        }
+        else
         {
             y_clmat.create_with_clmem(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
             uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
@@ -92,10 +92,6 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         acv::Mat uv_dst_mat(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[1],
                             pDst->pi32Pitch[1]); // create a buffer on the host
         lRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
-
-        //memcpy(pDst->ppu8Plane[0], y_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[0]);
-        //memcpy(pDst->ppu8Plane[1], uv_dst_mat.data, pSrc->i32Height*pSrc->pi32Pitch[1] /2);
-
     }
 
     LOGD("PyramidNLM_OCL_Handle++");

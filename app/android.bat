@@ -19,6 +19,6 @@ adb pull /data/local/tmp/test/binary_source.bin ./out/
 adb pull /data/local/tmp/test/program_binary.bin ./out/
 
 
-adb logcat > ./log/12.4.txt
+adb logcat > ./log/12.7.txt
 
 pause

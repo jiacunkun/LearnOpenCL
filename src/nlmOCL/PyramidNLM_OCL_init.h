@@ -45,11 +45,6 @@ bool initializeOCL(arc_example::ocl::OCLInitilizerExample& ocl_initializer)
     #if ANDROID
 
     src_files.push_back("/data/local/tmp/test/PyramidNLM.cl"); // the source file
-    //FILE* fp = fopen("../test.txt", "wb");
-    //if (fp)
-    //{
-    //	fclose(fp);
-    //}
 
     std::string output_binary_source = "/data/local/tmp/test/binary_source.bin";
     std::string output_program_binary = "/data/local/tmp/test/program_binary.bin";

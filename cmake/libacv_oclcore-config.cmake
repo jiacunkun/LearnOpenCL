@@ -10,7 +10,7 @@ if(MSVC)
     set(acv_oclcore_INCLUDE_DIRS "${_ROOT}/include")
 
     if("${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
-        set(_ROOT "${_ROOT}/lib/vs2019_win32/")
+        set(_ROOT "${_ROOT}/lib/vs2017_win32/")
     else("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
         set(_ROOT "${_ROOT}/lib/vs2017_win64/")
     endif("${CMAKE_SIZEOF_VOID_P}" EQUAL "4")
