@@ -66,12 +66,12 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
                         pSrc->pi32Pitch[1]); // set pointer to a Mat
         acv::ocl::CLMat y_clmat;
         acv::ocl::CLMat uv_clmat;
-        if (y_clmat.is_svm_available()) // an eample to use SVM buffer
-        {
-        	y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
-            uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
-        }
-        else
+        //if (y_clmat.is_svm_available()) // an eample to use SVM buffer
+        //{
+        //	y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
+        //    uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
+        //}
+        //else
         {
             y_clmat.create_with_clmem(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
             uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);

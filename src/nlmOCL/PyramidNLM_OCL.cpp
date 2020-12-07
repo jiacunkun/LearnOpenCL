@@ -150,19 +150,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 			LOGD("initBuffer++");
 			for (int i = 0; i < nLayer; i++)
-			{
-				if (m_PyrDownImg[i].is_svm_available()) // an eample to use SVM buffer
-				{
-					m_PyrDownImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
-					m_DenoiseImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
-					m_TempImg[i].create_with_svm(nHeight >> i, nWidth >> i, ACV_8UC1);
-				}
-				else
-				{
-					m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-					m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-					m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-				}
+			{			
+				m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+				m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+				m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
 			}
 			LOGD("initBuffer--");
 
@@ -173,16 +164,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool bRet = true;
 
             CLMat u, v;
-            if (u.is_svm_available()) // an eample to use SVM buffer
-            {
-            	u.create_with_svm(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
-                v.create_with_svm(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
-            }
-            else
-            {
-                u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
-                v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
-            }
+            u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
+            v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
+            
 
             bRet &= SplitNV21Channel(srcUV, u, v);
 
