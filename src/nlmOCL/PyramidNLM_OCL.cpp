@@ -185,6 +185,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             }
 
             bRet &= SplitNV21Channel(srcUV, u, v);
+
             bRet &= run(u, u, fNoiseVarUV, true);
             bRet &= run(v, v, fNoiseVarUV, true);
 
@@ -417,6 +418,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::ImageSubImage(CLMat& srcDst, CLMat& src)
         {
+            LOGD("ImageSubImage++");
             bool bRet = true;
 
             int src_step = srcDst.stride(0);
@@ -434,11 +436,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
+            LOGD("ImageSubImage--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::ImageAddImage(CLMat& srcDst, CLMat& src)
         {
+            LOGD("ImageAddImage++");
             bool bRet = true;
 
             int src_step = srcDst.stride(0);
@@ -456,11 +460,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
+            LOGD("ImageAddImage--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::SplitNV21Channel(CLMat& uv, CLMat& u, CLMat& v)
         {
+            LOGD("SplitNV21Channel++");
             bool bRet = true;
 
             int src_step = uv.stride(0);
@@ -485,11 +491,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //u.unmap();
             //v.unmap();
 
+            LOGD("SplitNV21Channel--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::MergeNV21Channel(CLMat& u, CLMat& v, CLMat& uv)
         {
+            LOGD("MergeNV21Channel++");
             bool bRet = true;
 
             int src_step = u.stride(0);
@@ -514,6 +522,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //u.unmap();
             //v.unmap();
 
+            LOGD("MergeNV21Channel--");
             return bRet;
         }
 
