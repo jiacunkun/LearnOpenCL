@@ -58,10 +58,7 @@ include_directories(
         ${acv_oclcore_INCLUDE_DIRS}
         ${OpenCV_INCLUDE_DIRS}
         ./
-        SimpleResize/
         CL/
-        pyramidNLM/
-        guidedFilter/
         nlmOCL/
         common/
 )
@@ -108,7 +105,4 @@ install(TARGETS ${LIBRARY_NAME} LIBRARY DESTINATION "lib"
 # 整个目录. 我提倡将头文件分开, 这是其中一个原因
 install(DIRECTORY "${LIBRARY_INCLUDE_DIRS}/" DESTINATION include/)
 
-# 我们的算法有模型文件, 我们还得把模型文件一起安装出去
-
-install(DIRECTORY "${LIBRARY_MODEL_DIRS}/" DESTINATION models/)
 

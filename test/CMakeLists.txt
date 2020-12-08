@@ -9,7 +9,6 @@ if(ANDROID)
 else()
     #OpenCV
     find_package(OpenCV REQUIRED)
-
 endif()
 
 # 搜索路径中加入接口头文件路径
@@ -51,6 +50,3 @@ target_link_libraries(gen_ocl
         ${libmpbase_LIBS}
         ${acv_oclcore_LIBS}
         )
-
-
-

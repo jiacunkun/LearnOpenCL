@@ -779,6 +779,7 @@ kernel void NLMDenoise
     		global uchar *pDstLine = pDst + dst_step * y + x + 1;
 
 			#if 0 //并行加速
+            
 		    
 			#else
 			ProcessBlock4x4(pCurLine,
