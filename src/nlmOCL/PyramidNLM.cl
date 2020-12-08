@@ -474,6 +474,8 @@ inline void GetBlockResult(global uchar *pDstBlock,
 
 
 inline void ProcessBlock4x4(const global uchar *pCurLine,
+                            const global uchar *pPreLine,
+                            const global uchar *pNexLine,
                             global uchar *pDstLine,
                             const global int *pMap,
                             int lPitch,
@@ -490,13 +492,13 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
     AddBlockSumByNei(pCurLine, pCurLine - 1, lPitch, lSumWei, pMap);
     AddBlockSumByNei(pCurLine, pCurLine + 1, lPitch, lSumWei, pMap);
 
-    AddBlockSumByNei(pCurLine, pCurLine - lPitch - 1, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pCurLine - lPitch, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pCurLine - lPitch + 1, lPitch, lSumWei, pMap);
+    AddBlockSumByNei(pCurLine, pPreLine - 1, lPitch, lSumWei, pMap);
+    AddBlockSumByNei(pCurLine, pPreLine, lPitch, lSumWei, pMap);
+    AddBlockSumByNei(pCurLine, pPreLine + 1, lPitch, lSumWei, pMap);
 
-    AddBlockSumByNei(pCurLine, pCurLine + lPitch - 1, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pCurLine + lPitch, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pCurLine + lPitch + 1, lPitch, lSumWei, pMap);
+    AddBlockSumByNei(pCurLine, pNexLine - 1, lPitch, lSumWei, pMap);
+    AddBlockSumByNei(pCurLine, pNexLine, lPitch, lSumWei, pMap);
+    AddBlockSumByNei(pCurLine, pNexLine + 1, lPitch, lSumWei, pMap);
 
     // average / sweight
     GetBlockResult(pDstLine, lPitch, lSumWei, pInvMap);
@@ -578,12 +580,12 @@ inline void ProcessLinesBroundMain(const global uchar *pCurLine,
 }
 
  inline void ProcessPointBround(const global uchar *pCurPoint,
-                                      const global uchar *pPrePoint,
-                                      const global uchar *pNexPoint,
-                                       global uchar *pDstPoint,
-                                      const global int *pMap,
-                                      const global int *pInvMap,
-                                      int l_add)
+                                const global uchar *pPrePoint,
+                                const global uchar *pNexPoint,
+                                global uchar *pDstPoint,
+                                const global int *pMap,
+                                const global int *pInvMap,
+                                int l_add)
  {
      int lNVal = 0;
      int lDif = 0, lTmpW = 0;
@@ -612,11 +614,11 @@ inline void ProcessLinesBroundMain(const global uchar *pCurLine,
  }
 
 inline void ProcessPoint(const global uchar *pCurPoint,
-                                const global uchar *pPrePoint,
-                                const global uchar *pNexPoint,
-                                global uchar *pDstPoint,
-                                const global int *pMap,
-                                const global int *pInvMap)
+                         const global uchar *pPrePoint,
+                         const global uchar *pNexPoint,
+                         global uchar *pDstPoint,
+                         const global int *pMap,
+                         const global int *pInvMap)
 {
     int lDif = 0;
     int lTmpW = 0;
@@ -642,12 +644,12 @@ inline void ProcessPoint(const global uchar *pCurPoint,
 }
 
 inline void ProcessLines1Main(const global uchar *pCurLine,
-                                const global uchar *pPreLine,
-                                const global uchar *pNexLine,
-                                global uchar *pDstLine,
-                                int lWidth,
-                                const global int *pMap,
-                                const global int *pInvMap)
+                              const global uchar *pPreLine,
+                              const global uchar *pNexLine,
+                              global uchar *pDstLine,
+                              int lWidth,
+                              const global int *pMap,
+                              const global int *pInvMap)
 {
     //left point
     ProcessPointBround(pCurLine, pPreLine, pNexLine, pDstLine, pMap, pInvMap, 1);
@@ -772,11 +774,16 @@ kernel void NLMDenoise
 		if (x >=0 && x < src_cols - 4)
 		{
 			const global uchar *pCurLine = pSrc + src_step * y + x + 1;
+            const global uchar *pPreLine = pCurLine - src_step;
+            const global uchar *pNexLine = pCurLine + src_step;
     		global uchar *pDstLine = pDst + dst_step * y + x + 1;
+
 			#if 0 //并行加速
 		    
 			#else
 			ProcessBlock4x4(pCurLine,
+                            pPreLine,
+                            pNexLine,
                         	pDstLine,
                         	pMap,
                         	src_step,

@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     MInt32 lScale = 1;
     MInt32 pSharpenIntensity[4] = { 0 };
 
-    sprintf(filename, "E:\\svn\\NLM_OCL\\data\\IMG_20201116104745_0_4000x3000_iso_466_crop_1011_697_2012_1509.nv12");
+    sprintf(filename, "E:\\svn\\PyramidMLM_OCL\\data\\IMG_20201116104745_0_4000x3000_iso_466_crop_1011_697_2012_1509.nv12");
 
     lret = ParseWidthHeight(filename, &height, &width);
     if (lret != 0)
