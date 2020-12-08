@@ -54,14 +54,14 @@ int main(int argc, char* argv[])
     }
 
     char filename[255] = {0};
-    MInt32 height = 3472;
-    MInt32 width = 4624;
+    MInt32 height = 0;
+    MInt32 width = 0;
     MInt32 lLayer = 0;
     MFloat pEps[4] = {0};
     MInt32 lScale = 1;
     MInt32 pSharpenIntensity[4] = {0};
 
-    sprintf(filename, "/data/local/tmp/test/ISO00304_043_1_4624x3472_[0]_50-0-50-0-0-0-80-0-0-0-0-1-0-1-0-1-0-0-0-0-0-0-0--1-0-0-0-ISO=0-CamType=0-fZoomValue=1.000000_res.NV21");
+    sprintf(filename, "/data/local/tmp/test/IMG_20201116104745_0_4000x3000_iso_466_crop_1011_697_2012_1509.nv12");
 
 
     lret = ParseWidthHeight(filename, &height, &width);
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         guided.i32Height = height;
     }
     // 读取引导图
-    sprintf(filename, "/data/local/tmp/test/ISO00304_043_1_4624x3472_[0]_50-0-50-0-0-0-80-0-0-0-0-1-0-1-0-1-0-0-0-0-0-0-0--1-0-0-0-ISO=0-CamType=0-fZoomValue=1.000000_res.NV21");
+    sprintf(filename, "/data/local/tmp/test/IMG_20201116104745_0_4000x3000_iso_466_crop_1011_697_2012_1509.nv12");
 
     if (1)
     {
@@ -154,8 +154,8 @@ int main(int argc, char* argv[])
 
     // run demo
     {
-        MFloat fNoiseVarY = 20;
-        MFloat fNoiseVarUV = 20;
+        MFloat fNoiseVarY = 100;
+        MFloat fNoiseVarUV = 100;
         PyramidNLM_OCL_Init();
         lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
         PyramidNLM_OCL_Uninit();
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
         srcName = filename;;
         pAt = srcName.find_last_of('.');
         extName = srcName.substr(pAt);
-        dstName = srcName.substr(0, pAt) + "_res" + extName;
+        dstName = srcName.substr(0, pAt) + "_res_android" + extName;
 
         fpOutput = fopen(dstName.c_str(), "wb");
         if (!fpOutput)

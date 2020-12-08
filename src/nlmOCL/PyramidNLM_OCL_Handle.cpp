@@ -5,6 +5,7 @@
 #include "CLMat.h"
 #include "PyramidNLM_OCL_init.h"
 #include "ArcsoftLog.h"
+#include "BasicTimer.h"
 
 USING_NS_SINFLE_IMAGE_ENHANCEMENT
 
@@ -55,6 +56,9 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
 {
     LOGD("PyramidNLM_OCL_Handle++");
 
+#if CALCULATE_TIME
+    BasicTimer time;
+#endif
     MInt32 lRet = 0;
 
     // run
@@ -96,6 +100,10 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
                             pDst->pi32Pitch[1]); // create a buffer on the host
         lRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
     }
+
+#if CALCULATE_TIME
+    LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
 
     LOGD("PyramidNLM_OCL_Handle++");
     return lRet - 1;

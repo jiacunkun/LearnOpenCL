@@ -1,6 +1,6 @@
 # ./CMakeLists.txt
 cmake_minimum_required(VERSION 3.5)
-project(NLM_OCL)
+project(PyramidMLM_OCL)
 
 # 编译选项
 if(MSVC)
@@ -20,7 +20,7 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 # 为我们的算法库设置一些变量, 免去后面的硬编码
 # 如果你有新的项目需要用到这些CMakeLists, 直接拷贝这个项目
 # 将 `LIBRARY_NAME` 改为你的名称就好
-set(LIBRARY_NAME NLM_OCL)
+set(LIBRARY_NAME PyramidMLM_OCL)
 set(LIBRARY_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/include")
 
 # 加入项目另外两个部分

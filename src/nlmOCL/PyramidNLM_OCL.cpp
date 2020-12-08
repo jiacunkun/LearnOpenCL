@@ -3,7 +3,7 @@
 #include "CLMat.h"
 #include "CLlogger.h"
 #include "ArcsoftLog.h"
-
+#include "BasicTimer.h"
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
@@ -184,6 +184,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::run(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0)
         {
             LOGD("PyramidNLM_OCL::run++");
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             bool bRet = true;
 
@@ -250,6 +253,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //src.unmap();
             //dst.unmap();
 
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
+
             LOGD("PyramidNLM_OCL::run--");
             return bRet;
         }
@@ -279,7 +286,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::PyramidDown(CLMat& src, CLMat& dst)
         {
             LOGD("PyramidDown++");
-
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             bool bRet = true;
 
 #if 1
@@ -305,7 +314,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //Mat tmpdst = dst.map();
             //src.unmap();
             //dst.unmap();
-
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
             LOGD("PyramidDown--");
             return bRet;
         }
@@ -313,7 +324,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::PyramidUp(CLMat& src, CLMat& dst)
         {
             LOGD("PyramidUp++");
-
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             bool bRet = true;
 
 #if 1
@@ -341,7 +354,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //Mat tmpdst = dst.map();
             //src.unmap();
             //dst.unmap();
-
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
             LOGD("PyramidUp--");
             return bRet;
         }
@@ -349,6 +364,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar)
         {
             LOGD("NLMDenoise++");
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             bool bRet = true;
 
             if (m_fNoiseVar != fNoiseVar)
@@ -394,7 +412,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //Mat tmpdst = dst.map();
             //src.unmap();
             //dst.unmap();
-
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
             LOGD("NLMDenoise--");
             return bRet;
         }
@@ -402,6 +422,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::ImageSubImage(CLMat& srcDst, CLMat& src)
         {
             LOGD("ImageSubImage++");
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             bool bRet = true;
 
             int src_step = srcDst.stride(0);
@@ -418,7 +441,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
-
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
             LOGD("ImageSubImage--");
             return bRet;
         }
@@ -426,6 +451,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::ImageAddImage(CLMat& srcDst, CLMat& src)
         {
             LOGD("ImageAddImage++");
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             bool bRet = true;
 
             int src_step = srcDst.stride(0);
@@ -442,7 +470,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
-
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
             LOGD("ImageAddImage--");
             return bRet;
         }
@@ -450,6 +480,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::SplitNV21Channel(CLMat& uv, CLMat& u, CLMat& v)
         {
             LOGD("SplitNV21Channel++");
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             bool bRet = true;
 
             int src_step = uv.stride(0);
@@ -473,7 +506,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //uv.unmap();
             //u.unmap();
             //v.unmap();
-
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
             LOGD("SplitNV21Channel--");
             return bRet;
         }
@@ -481,6 +516,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool PyramidNLM_OCL::MergeNV21Channel(CLMat& u, CLMat& v, CLMat& uv)
         {
             LOGD("MergeNV21Channel++");
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             bool bRet = true;
 
             int src_step = u.stride(0);
@@ -504,7 +542,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //uv.unmap();
             //u.unmap();
             //v.unmap();
-
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
             LOGD("MergeNV21Channel--");
             return bRet;
         }
