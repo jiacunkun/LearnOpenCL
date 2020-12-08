@@ -151,7 +151,7 @@ int main()
     {
         double start = static_cast<double>(cv::getTickCount());
 
-        MFloat fNoiseVarY = 20;
+        MFloat fNoiseVarY = 100;
         MFloat fNoiseVarUV = 0;
         lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
 

@@ -208,7 +208,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             // denoise from small layer to large layer
             for (int i = nLayer - 1; i > 0; i--)
             {
-                float fTmpVar = fNoiseVar * fPow[i];;
+                float fTmpVar = fNoiseVar * fPow[i];
                 fTmpVar = MAX(1.0f, fTmpVar);
 
                 bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);

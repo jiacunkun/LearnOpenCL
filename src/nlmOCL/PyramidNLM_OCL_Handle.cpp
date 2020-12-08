@@ -83,14 +83,16 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         lRet = y_clmat.copyFrom(y_mat);
         lRet &= uv_clmat.copyFrom(uv_mat);
         //uv_clmat.copyTo(y_clmat); //测试拷贝
+        time.PrintTime("2");
+
 
         // run GPU
         {
-            time.PrintTime("2");
             lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, true);
-            time.PrintTime("3_y");
-            lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
-            time.PrintTime("4_uv");
+            time.PrintTime(" ============================================ 3_y");
+
+            //lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
+            //time.PrintTime("4_uv");
         }
 
 
