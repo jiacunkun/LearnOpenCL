@@ -690,7 +690,7 @@ kernel void NLMDenoise
 	int y = get_global_id(1)*4 + 1;
 
 	// 第一行
-     if (y == 1) 
+     if (y == 1)
      {
         const global uchar *pCurLine = pSrc + src_step * (y - 1) + x;
         global uchar *pDstLine = pDst + dst_step * (y - 1) + x;
@@ -773,11 +773,15 @@ kernel void NLMDenoise
 		{
 			const global uchar *pCurLine = pSrc + src_step * y + x + 1;
     		global uchar *pDstLine = pDst + dst_step * y + x + 1;
-		    ProcessBlock4x4(pCurLine,
+			#if 0 //并行加速
+		    
+			#else
+			ProcessBlock4x4(pCurLine,
                         	pDstLine,
                         	pMap,
                         	src_step,
                         	pInvMap);
+			#endif
 		}
 	}
 }

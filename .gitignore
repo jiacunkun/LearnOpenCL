@@ -4,3 +4,4 @@ cmake-build-release/
 out/
 .vs/
 data/
+.svn/
