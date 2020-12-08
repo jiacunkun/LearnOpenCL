@@ -384,7 +384,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
             kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows, map_clmat, invMap_clmat); // set argument
-            size_t global_size[] = { (size_t)(dst_cols+3>>2), (size_t)(dst_rows+3>>2) }; // set global size
+            size_t global_size[] = { (size_t)((dst_cols+3)>>2), (size_t)((dst_rows+3)>>2) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;

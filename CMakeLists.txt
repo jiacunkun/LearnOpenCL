@@ -23,6 +23,18 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 set(LIBRARY_NAME NLM_OCL)
 set(LIBRARY_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/include")
 
+
+add_compile_options(-Wno-ignored-qualifiers)
+add_compile_options(-Wno-unused-parameter)
+add_compile_options(-Wno-unused-private-field)
+add_compile_options(-Wno-vunused-variable)
+add_compile_options(-Wno-unused-command-line-argument)
+add_compile_options(-Wno-unused-label)
+add_compile_options(-Wno-unknown-warning-option)
+add_compile_options(-Wno-unused-variable)
+add_compile_options(-Wno-macro-redefined)
+
+
 # 加入项目另外两个部分
 # 源代码
 add_subdirectory(src)

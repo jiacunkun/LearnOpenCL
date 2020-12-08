@@ -3,10 +3,10 @@
 add_definitions(-DPROJECT_PATH="${CMAKE_SOURCE_DIR}") #定义当前算法库的log
 
 # debug宏定义
-option(DEBUG_OUTPUT "Build test apps or not" OFF)
+option(DEBUG_OUTPUT "Build test apps or not" ON)
 message(${DEBUG_OUTPUT})
 if(DEBUG_OUTPUT)
-    find_package(OpenCV REQUIRED)
+#    find_package(OpenCV REQUIRED)
     add_definitions(-DDEBUG_OUTPUT)
 endif()
 
@@ -27,6 +27,7 @@ include("${CMAKE_SOURCE_DIR}/cmake/libyuv-config.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/libmpbase-config.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/libmobilecv-config.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/libacv_oclcore-config.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/libopencv-config.cmake")
 
 # 搜集算法库所需的头文件和源码文件, 可以用一些正则来匹配你的源码,
 # 但是一般的教程不建议这么做, 一个一个加避免出错
@@ -48,6 +49,7 @@ set(SOURCE_FILES
 file(GLOB HEADER_FILES
         ${LIBRARY_INCLUDE_DIRS}/*.h
         )
+message("libopencv_INCLUDE_DIRS = ${libopencv_INCLUDE_DIRS}")
 
 # 加入头文件搜索路径
 include_directories(
@@ -61,6 +63,9 @@ include_directories(
         CL/
         nlmOCL/
         common/
+        pyramidNLM/
+        ../include
+        ${libopencv_INCLUDE_DIRS}
 )
 
 # 创建我们的算法库, 用上之前我们定义的 `LIBRARY_NAME` 防止硬编码
@@ -81,6 +86,7 @@ if(ANDROID)
             ${libyuv_LIBS}
             ${log-lib}
             ${acv_oclcore_LIBS}
+            ${libopencv_LIBS}
             )
 else()
     target_link_libraries(${LIBRARY_NAME}
@@ -90,6 +96,7 @@ else()
             ${log-lib}
             ${OpenCV_LIBS}
             ${acv_oclcore_LIBS}
+            ${libopencv_LIBS}
             )
 endif()
 

@@ -5,3 +5,6 @@ out/
 .vs/
 data/
 .svn/
+.DS_Store
+app/libCheeseSymbols
+test_4032x3024.NV21
