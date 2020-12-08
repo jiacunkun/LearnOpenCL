@@ -3,6 +3,8 @@
 #include "CLMat.h"
 #include "CLlogger.h"
 #include "ArcsoftLog.h"
+#include "BasicTimer.h"
+#include "CLlogger.h"
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
@@ -36,18 +38,30 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
-            LOGD("PyramidNLM_OCL()");
-            m_pMap = new MInt32[16 * 50];
-            m_pInvMap = new MInt32[256 * 9 + 1];
+            m_pMap_clmat.create_with_clmem(1, 16*50, ACV_32SC1);
+            m_pInvMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
 
-            MakeDivTable(m_pInvMap, ( 256 * 9 + 1 ));
+
+            m_fNoiseVar = 20.0; /// 预先设定值
+            m_pMap = new MInt32[16 * 50];
+            MakeWeightMap(m_pMap, m_fNoiseVar, 16 * 50);
+            Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
+            m_pMap_clmat.copyFrom(map_mat, true);
+
+
+
+            MInt32 pInvMap[256 * 9 + 1];
+            MakeDivTable(pInvMap, ( 256 * 9 + 1 ));
+            Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, pInvMap);
+            m_pInvMap_clmat.copyFrom(invMap_mat, true);
         }
 
         PyramidNLM_OCL::~PyramidNLM_OCL()
         {
-            LOGD("~PyramidNLM_OCL()");
             SAFE_DELETE_ARRAY(m_pMap)
-            SAFE_DELETE_ARRAY(m_pInvMap)
+
+            m_pMap_clmat.release();
+            m_pInvMap_clmat.release();
         }
 
        
@@ -183,11 +197,11 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::run(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0)
         {
-            LOGD("PyramidNLM_OCL::run++");
+            BasicTimer timer;
+            //LOGD("PyramidNLM_OCL::run++");
             MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             bool bRet = true;
 
-            int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
             int nLayer = 4; //layer of pyramid
@@ -196,37 +210,41 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLMat m_PyrDownImg[4];
             CLMat m_DenoiseImg[4];
             CLMat m_TempImg[4];
-            LOGD("initBuffer++");
             for (int i = 0; i < nLayer; i++)
             {
                 m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
                 m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
                 m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
             }
-            LOGD("initBuffer--");
-
+            timer.PrintTime("py 1 new buffer");
 
             // build pyramid
             src.copyTo(m_PyrDownImg[0]);
+            timer.PrintTime("py 2 copy");
 
             for (int i = 0; i < nLayer - 1; i++)
             {
                 PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i + 1]);
-                //PyramidUp(m_PyrDownImg[i + 1], m_PyrDownImg[i]);
                 m_PyrDownImg[i + 1].copyTo(m_TempImg[i + 1]);
             }
+            timer.PrintTime("py 3 down");
+
 
             // denoise from small layer to large layer
             for (int i = nLayer - 1; i > 0; i--)
             {
-                float fTmpVar = fNoiseVar * fPow[i];;
+                float fTmpVar = fNoiseVar * fPow[i];
                 fTmpVar = MAX(1.0f, fTmpVar);
 
-                bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
-                bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]);
-                bRet &= PyramidUp(m_DenoiseImg[i], m_DenoiseImg[i - 1]);
-                bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
+                BasicTimer timer;
+                bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar); timer.PrintTime("111111111111");
+                bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]); timer.PrintTime("2 ");
+                bRet &= PyramidUp(m_DenoiseImg[i], m_DenoiseImg[i - 1]); timer.PrintTime("3");
+                bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]); timer.PrintTime("4");
             }
+            timer.PrintTime("py 4 run");
+
+
 
             // special handle for 0 layer
             {
@@ -244,13 +262,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                     m_PyrDownImg[0].copyTo(dst);// copy result to output
                 }
             }
+            timer.PrintTime("py 5 copy out");
 
-            //Mat tmpsrc = src.map();
-            //Mat tmpdst = m_DenoiseImg[0].map();
-            //src.unmap();
-            //dst.unmap();
 
-            LOGD("PyramidNLM_OCL::run--");
+            //LOGD("PyramidNLM_OCL::run--");
             return bRet;
         }
 
@@ -278,7 +293,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         bool PyramidNLM_OCL::PyramidDown(CLMat& src, CLMat& dst)
         {
-            LOGD("PyramidDown++");
+            //LOGD("PyramidDown++");
 
             bool bRet = true;
 
@@ -306,13 +321,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //src.unmap();
             //dst.unmap();
 
-            LOGD("PyramidDown--");
+            //LOGD("PyramidDown--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::PyramidUp(CLMat& src, CLMat& dst)
         {
-            LOGD("PyramidUp++");
+            //LOGD("PyramidUp++");
 
             bool bRet = true;
 
@@ -342,39 +357,35 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //src.unmap();
             //dst.unmap();
 
-            LOGD("PyramidUp--");
+            //LOGD("PyramidUp--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar)
         {
-            LOGD("NLMDenoise++");
-            bool bRet = true;
+            if(fNoiseVar < 0)
+            {
+                return false;
+            }
+            if(fNoiseVar == 0)
+            {
+                return true;
+            }
 
+
+
+            /// 更新参数
             if (m_fNoiseVar != fNoiseVar)
             {
-                MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
                 m_fNoiseVar = fNoiseVar;
+                MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
+                Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
+                m_pMap_clmat.copyFrom(map_mat, true);
             }
 
-            Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
-            Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, m_pInvMap);
 
-            CLMat map_clmat, invMap_clmat;
-            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
-            //{
-            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //	invMap_clmat.create_with_svm(1, 256 * 9 + 1, ACV_32SC1);
-            //}
-            //else
-            {
-                map_clmat.create_with_clmem(1, 16*50, ACV_32SC1);
-                invMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
-            }
 
-            map_clmat.copyFrom(map_mat);
-            invMap_clmat.copyFrom(invMap_mat);
-
+            // yz123
             int src_step = src.stride(0);
             int src_cols = src.cols();
             int src_rows = src.rows();
@@ -383,25 +394,24 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int dst_rows = dst.rows();
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
-            kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows, map_clmat, invMap_clmat); // set argument
-            size_t global_size[] = { (size_t)((dst_cols+3)>>2), (size_t)((dst_rows+3)>>2) }; // set global size
+            kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows, m_pMap_clmat, m_pInvMap_clmat); // set argument
+
+            size_t w = (dst_cols + 3) >> 2;
+            size_t h = (dst_rows + 3) >> 2;
+            size_t global_size[] = { w, h }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
-            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            //Mat tmpsrc = src.map();
-            //Mat tmpdst = dst.map();
-            //src.unmap();
-            //dst.unmap();
 
-            LOGD("NLMDenoise--");
+            bool bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
             return bRet;
         }
 
         bool PyramidNLM_OCL::ImageSubImage(CLMat& srcDst, CLMat& src)
         {
-            LOGD("ImageSubImage++");
+            //LOGD("ImageSubImage++");
             bool bRet = true;
 
             int src_step = srcDst.stride(0);
@@ -411,6 +421,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int dst_cols = src.cols();
             int dst_rows = src.rows();
 
+            //printf("src_step = %d, %d\n", src_step, dst_step);
+
             CLKernel& kernel = getKernelOfImageSubImage(0);
             kernel.Args(srcDst, src_step, src_cols, src_rows, src, dst_step, dst_cols, dst_rows); // set argument
             size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
@@ -419,13 +431,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            LOGD("ImageSubImage--");
+            //LOGD("ImageSubImage--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::ImageAddImage(CLMat& srcDst, CLMat& src)
         {
-            LOGD("ImageAddImage++");
+            //LOGD("ImageAddImage++");
             bool bRet = true;
 
             int src_step = srcDst.stride(0);
@@ -443,13 +455,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            LOGD("ImageAddImage--");
+            //LOGD("ImageAddImage--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::SplitNV21Channel(CLMat& uv, CLMat& u, CLMat& v)
         {
-            LOGD("SplitNV21Channel++");
+            //LOGD("SplitNV21Channel++");
             bool bRet = true;
 
             int src_step = uv.stride(0);
@@ -474,13 +486,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //u.unmap();
             //v.unmap();
 
-            LOGD("SplitNV21Channel--");
+            //LOGD("SplitNV21Channel--");
             return bRet;
         }
 
         bool PyramidNLM_OCL::MergeNV21Channel(CLMat& u, CLMat& v, CLMat& uv)
         {
-            LOGD("MergeNV21Channel++");
+            //LOGD("MergeNV21Channel++");
             bool bRet = true;
 
             int src_step = u.stride(0);
@@ -505,7 +517,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //u.unmap();
             //v.unmap();
 
-            LOGD("MergeNV21Channel--");
+            //LOGD("MergeNV21Channel--");
             return bRet;
         }
 
@@ -519,7 +531,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             }
 
             return GPyramidNLM_OCLRetriever::get().run(src, dst, fNoiseVar, bIsDenoiseFor0);
-
         }
 
         bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
@@ -528,7 +539,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             {
                 LOG(ERROR) << "The object is not created. Please call GSampleResizeOCLRetriever::registerToGlobalHolder to register";
                 return false;
-
             }
 
             return GPyramidNLM_OCLRetriever::get().runUV(srcUV, dstUV, fNoiseVarUV);

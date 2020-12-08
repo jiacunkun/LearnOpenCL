@@ -8,6 +8,7 @@
 #include "PyramidNLM_OCL_Handle.h"
 #include "opencv2/opencv.hpp"
 #include "ArcsoftLog.h"
+#include "BasicTimer.h"
 
 using namespace std;
 
@@ -125,17 +126,18 @@ int main()
     // run demo
     /// ===================================================
     {
-        double start = static_cast<double>(cv::getTickCount());
-
         MFloat fNoiseVarY = 20;
         MFloat fNoiseVarUV = 20;
-        PyramidNLM_OCL_Init();
-        lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
-        PyramidNLM_OCL_Uninit();
 
-        double end = static_cast<double>(cv::getTickCount());
-        double time = 1000 * ( end - start ) / ( double ) cv::getTickFrequency();  //ms
-        printf("====================================== Denoise_Y time = %fms\n", time);
+        BasicTimer timer;
+        PyramidNLM_OCL_Init();
+        timer.PrintTime("====================================== handle init");
+
+        lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
+        timer.PrintTime("====================================== <<<<  handle run ");
+
+        PyramidNLM_OCL_Uninit();
+        timer.PrintTime("====================================== handle uninit");
     }
 
 
@@ -167,6 +169,34 @@ int main()
         cv::Mat RGBImg;
         cv::cvtColor(SrcImg, RGBImg, cv::COLOR_YUV2BGRA_NV21);
         cv::imwrite("/data/local/tmp/test/test_out.png", RGBImg);
+
+        cv::Mat out_org = cv::imread("/data/local/tmp/test/test_out_org.png");
+        if(!out_org.empty())
+        {
+            cv::cvtColor(out_org, out_org, cv::COLOR_BGR2BGRA);
+            int w = out_org.cols;
+            int h = out_org.rows;
+
+
+            int max = 0;
+            int count = 0;
+            for(int i = 0; i < h; ++i)
+            {
+                unsigned char* p1 = RGBImg.data + i * w * 4;
+                unsigned char* p2 = out_org.data + i * w * 4;
+                for(int j = 0; j < w * 4; ++j)
+                {
+                    int diff = abs(p1[j] - p2[j]);
+                    max = std::max(max, diff);
+                    if(diff > 0)
+                    {
+                        count++;
+                    }
+                }
+            }
+            printf("max = %d, count = %d\n", max, count);
+        }
+
     }
 
 

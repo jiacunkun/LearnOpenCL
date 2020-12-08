@@ -10,7 +10,7 @@ if(DEBUG_OUTPUT)
     add_definitions(-DDEBUG_OUTPUT)
 endif()
 
-option(OPEN_LOG "Open log apps or not" OFF)
+option(OPEN_LOG "Open log apps or not" ON)
 if(1)
     # 添加宏定义
     message(log)

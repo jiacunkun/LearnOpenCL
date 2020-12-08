@@ -2,6 +2,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(NLM_OCL)
 
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DANDROIDELF")
+
 # 编译选项
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /Wall")

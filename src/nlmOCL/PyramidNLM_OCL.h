@@ -13,34 +13,50 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
         public:
             PyramidNLM_OCL();
-            ~PyramidNLM_OCL();
 
-            virtual bool create(const CLContext& context, ProgramSourceType type);
+            virtual ~PyramidNLM_OCL();
+
+            virtual bool create(const CLContext &context, ProgramSourceType type);
+
             void initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
-            bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
-            bool runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
+
+            bool run(CLMat &src, CLMat &dst, float fNoiseVar, bool bIsDenoiseFor0);
+
+            bool runUV(CLMat &srcUV, CLMat &dstUV, float fNoiseVarUV);
 
         private:
-            bool NLMDenoise(CLMat &src, CLMat& dst, float fNoiseVar);
+            bool NLMDenoise(CLMat &src, CLMat &dst, float fNoiseVar);
 
         private:
-            bool PyramidUp(CLMat &src, CLMat& dst);
-            bool PyramidDown(CLMat &src, CLMat& dst);
-            bool Resize(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking = false); // the main function to call the kernel
-            bool SplitNV21Channel(CLMat &uv, CLMat& u, CLMat& v);
-            bool MergeNV21Channel(CLMat& u, CLMat& v, CLMat &uv);
-            bool ImageSubImage(CLMat& srcDst, CLMat& src);
-            bool ImageAddImage(CLMat& srcDst, CLMat& src);
+            bool PyramidUp(CLMat &src, CLMat &dst);
+
+            bool PyramidDown(CLMat &src, CLMat &dst);
+
+            bool Resize(const CLMat &src/*uchar*/, CLMat &dst/*uchar*/, bool is_blocking = false); // the main function to call the kernel
+            bool SplitNV21Channel(CLMat &uv, CLMat &u, CLMat &v);
+
+            bool MergeNV21Channel(CLMat &u, CLMat &v, CLMat &uv);
+
+            bool ImageSubImage(CLMat &srcDst, CLMat &src);
+
+            bool ImageAddImage(CLMat &srcDst, CLMat &src);
 
         private:
-            CLKernel& getKernelOfResize(int n);
-            CLKernel& getKernelOfSplitNV21Channel(int n);
-            CLKernel& getKernelOfMergeNV21Channel(int n);
-            CLKernel& getKernelOfImageSubImage(int n);
-            CLKernel& getKernelOfImageAddImage(int n);
-            CLKernel& getKernelOfNLMDenoise(int n);
-            CLKernel& getKernelOfPyramidDown(int n);
-            CLKernel& getKernelOfPyramidUp(int n);
+            CLKernel &getKernelOfResize(int n);
+
+            CLKernel &getKernelOfSplitNV21Channel(int n);
+
+            CLKernel &getKernelOfMergeNV21Channel(int n);
+
+            CLKernel &getKernelOfImageSubImage(int n);
+
+            CLKernel &getKernelOfImageAddImage(int n);
+
+            CLKernel &getKernelOfNLMDenoise(int n);
+
+            CLKernel &getKernelOfPyramidDown(int n);
+
+            CLKernel &getKernelOfPyramidUp(int n);
 
         private:
             CLProgram m_Program;
@@ -52,14 +68,18 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         private:
             // NLM降噪查表数据
             MInt32 *m_pMap = MNull;
-            MInt32 *m_pInvMap = MNull;
             MFloat m_fNoiseVar = -1;
+
+            CLMat m_pMap_clmat;
+            CLMat m_pInvMap_clmat;
+
+
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类
-        bool runPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
+        bool runPyramidNLM_OCL(CLMat &src, CLMat &dst, float fNoiseVar, bool bIsDenoiseFor0);
 
-        bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
+        bool runUVPyramidNLM_OCL(CLMat &srcUV, CLMat &dstUV, float fNoiseVarUV);
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END

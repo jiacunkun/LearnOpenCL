@@ -393,30 +393,30 @@ inline int  GetBlockDiff(const global uchar *pCurBlock, const global uchar *pNei
 
 inline void AddBlockSum(const global uchar *pNeiBlock, int lPitch, int *lSumWei, int lW)
 {
-    lSumWei[ 0 ] += lW;
-
-    lSumWei[ 1 ] += pNeiBlock[ 0 ] * lW;
-    lSumWei[ 2 ] += pNeiBlock[ 1 ] * lW;
-    lSumWei[ 3 ] += pNeiBlock[ 2 ] * lW;
-    lSumWei[ 4 ] += pNeiBlock[ 3 ] * lW;
+    lSumWei[ 0 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 1 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 2 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 3 ] += pNeiBlock[ 3 ] * lW;
     pNeiBlock += lPitch;
 
-    lSumWei[ 5 ] += pNeiBlock[ 0 ] * lW;
-    lSumWei[ 6 ] += pNeiBlock[ 1 ] * lW;
-    lSumWei[ 7 ] += pNeiBlock[ 2 ] * lW;
-    lSumWei[ 8 ] += pNeiBlock[ 3 ] * lW;
+    lSumWei[ 4 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 5 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 6 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 7 ] += pNeiBlock[ 3 ] * lW;
     pNeiBlock += lPitch;
 
-    lSumWei[ 9 ] += pNeiBlock[ 0 ] * lW;
-    lSumWei[ 10 ] += pNeiBlock[ 1 ] * lW;
-    lSumWei[ 11 ] += pNeiBlock[ 2 ] * lW;
-    lSumWei[ 12 ] += pNeiBlock[ 3 ] * lW;
+    lSumWei[ 8 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 9 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 10 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 11 ] += pNeiBlock[ 3 ] * lW;
     pNeiBlock += lPitch;
 
-    lSumWei[ 13 ] += pNeiBlock[ 0 ] * lW;
-    lSumWei[ 14 ] += pNeiBlock[ 1 ] * lW;
-    lSumWei[ 15 ] += pNeiBlock[ 2 ] * lW;
-    lSumWei[ 16 ] += pNeiBlock[ 3 ] * lW;
+    lSumWei[ 12 ] += pNeiBlock[ 0 ] * lW;
+    lSumWei[ 13 ] += pNeiBlock[ 1 ] * lW;
+    lSumWei[ 14 ] += pNeiBlock[ 2 ] * lW;
+    lSumWei[ 15 ] += pNeiBlock[ 3 ] * lW;
+
+    lSumWei[ 16 ] += lW;
 }
 
 inline void AddBlockSumByNei
@@ -435,44 +435,98 @@ inline void AddBlockSumByNei
     AddBlockSum(pNeiBlock, lPitch, lSumWei, lW);
 }
 
-inline void GetBlockResult(global uchar *pDstBlock,
+
+kernel void subImage
+(
+	global uchar *srcDst,
+	global uchar *src
+)
+{
+//	int srcDstVal = srcDst[0];
+//	int srcVal = src[0];
+//	srcDstVal = srcDstVal - srcVal + 128;
+//	srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
+//	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
+//	srcDst[0] = srcDstVal;
+//
+//	srcDstVal = srcDst[1];
+//    srcVal = src[1];
+//    srcDstVal = srcDstVal - srcVal + 128;
+//    srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
+//    srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
+//    srcDst[1] = srcDstVal;
+//
+//    srcDstVal = srcDst[2];
+//    srcVal = src[2];
+//    srcDstVal = srcDstVal - srcVal + 128;
+//    srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
+//    srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
+//    srcDst[2] = srcDstVal;
+//
+//    srcDstVal = srcDst[3];
+//    srcVal = src[3];
+//    srcDstVal = srcDstVal - srcVal + 128;
+//    srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
+//    srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
+//    srcDst[3] = srcDstVal;
+}
+
+
+inline void GetBlockResult(const global uchar *pCurLine,
+                           global uchar *pDstBlock,
                            int lPitch,
                            int *lSumWei,
                            const global int *pInvMap)
 {
-    int lSW = lSumWei[ 0 ];
+    int lSW = lSumWei[ 16 ];
     int lInvW = pInvMap[ lSW ];
-    lSumWei++;
 
     pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+    subImage(pDstBlock, pCurLine);
+
     pDstBlock += lPitch;
+    pCurLine += lPitch;
     lSumWei += 4;
 
-    pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock += lPitch;
-    lSumWei += 4;
+
+
 
     pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+    subImage(pDstBlock, pCurLine);
+
     pDstBlock += lPitch;
+    pCurLine += lPitch;
     lSumWei += 4;
+
+
 
     pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
     pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+    subImage(pDstBlock, pCurLine);
+    pDstBlock += lPitch;
+    pCurLine += lPitch;
+    lSumWei += 4;
+
+
+
+    pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
+    pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
+    pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
+    pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
+    subImage(pDstBlock, pCurLine);
 
 }
 
 
+constant int4 v256 = {255, 255, 255, 255};
 inline void ProcessBlock4x4(const global uchar *pCurLine,
                             const global uchar *pPreLine,
                             const global uchar *pNexLine,
@@ -486,7 +540,48 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
 	int lSumWei[17] = {0};
 
     // 当前块, 权重设置为最大值256
-    AddBlockSum(pCurLine, lPitch, lSumWei, 256);
+    AddBlockSum(pCurLine, lPitch, lSumWei, 256)
+
+
+//    int4 vSumWei0, vSumWei1, vSumWei2, vSumWei3;
+//
+//    vSumWei0 = convert_int4(vload4(0, pNeiBlock)) * v256;
+//    pNeiBlock += lPitch;
+//
+//    vSumWei1 = convert_int4(vload4(0, pNeiBlock)) * v256;
+//    pNeiBlock += lPitch;
+//
+//    vSumWei2 = convert_int4(vload4(0, pNeiBlock)) * v256;
+//    pNeiBlock += lPitch;
+//
+//    vSumWei3 = convert_int4(vload4(0, pNeiBlock)) * v256;
+//    pNeiBlock += lPitch;
+//
+//    lSumWei[ 0 ] = vSumWei0.s0;
+//    lSumWei[ 1 ] = vSumWei0.s1;
+//    lSumWei[ 2 ] = vSumWei0.s2;
+//    lSumWei[ 3 ] = vSumWei0.s3;
+//
+//        lSumWei[ 4 ] = vSumWei1.s0;
+//        lSumWei[ 5 ] = vSumWei1.s1;
+//        lSumWei[ 6 ] = vSumWei1.s2;
+//        lSumWei[ 7 ] = vSumWei1.s3;
+//
+//            lSumWei[ 8 ] = vSumWei2.s0;
+//            lSumWei[ 9 ] = vSumWei2.s1;
+//            lSumWei[ 10 ] = vSumWei2.s2;
+//            lSumWei[ 11 ] = vSumWei2.s3;
+//
+//                lSumWei[ 12 ] = vSumWei3.s0;
+//                lSumWei[ 13 ] = vSumWei3.s1;
+//                lSumWei[ 14 ] = vSumWei3.s2;
+//                lSumWei[ 15 ] = vSumWei3.s3;
+//
+//
+//    lSumWei[ 16 ] += lW;
+
+
+
 
     // 领域8个位置
     AddBlockSumByNei(pCurLine, pCurLine - 1, lPitch, lSumWei, pMap);
@@ -501,7 +596,9 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
     AddBlockSumByNei(pCurLine, pNexLine + 1, lPitch, lSumWei, pMap);
 
     // average / sweight
-    GetBlockResult(pDstLine, lPitch, lSumWei, pInvMap);
+    GetBlockResult(pCurLine, pDstLine, lPitch, lSumWei, pInvMap);
+
+
 }
 
 // 单行降噪
@@ -769,7 +866,7 @@ kernel void NLMDenoise
 			}
 
 		}
-		
+
 		// 中间点
 		if (x >=0 && x < src_cols - 4)
 		{
@@ -778,10 +875,6 @@ kernel void NLMDenoise
             const global uchar *pNexLine = pCurLine + src_step;
     		global uchar *pDstLine = pDst + dst_step * y + x + 1;
 
-			#if 0 //并行加速
-            
-		    
-			#else
 			ProcessBlock4x4(pCurLine,
                             pPreLine,
                             pNexLine,
@@ -789,7 +882,47 @@ kernel void NLMDenoise
                         	pMap,
                         	src_step,
                         	pInvMap);
-			#endif
 		}
 	}
 }
+
+
+
+
+///// yz123  0
+//kernel void NLMDenoise
+//(
+//	const global uchar *pSrc,
+//	int src_step,
+//	int src_cols,
+//	int src_rows,
+//	global uchar *pDst,
+//	int dst_step,
+//	int dst_cols,
+//	int dst_rows,
+//	const global int *pMap,
+//	const global int *pInvMap
+//)
+//{
+//    //获取当前图像行和列
+//    int x = get_global_id(0)*4 + 1;
+//	int y = get_global_id(1)*4 + 1;
+//
+//	int lSumWei[17] = {0};
+//
+//	const global uchar *pCurLine = pSrc + src_step * y + x;
+//    const global uchar *pPreLine = pCurLine - src_step;
+//    const global uchar *pNexLine = pCurLine + src_step;
+//    global uchar *pDstLine = pDst + dst_step * y + x;
+//
+//    if (y >= 1 && y < src_rows - 4 && x >=1 && x < src_cols - 4) {
+//        ProcessBlock4x4(pCurLine,
+//                        pPreLine,
+//                        pNexLine,
+//                        pDstLine,
+//                        pMap,
+//                        src_step,
+//                        lSumWei,
+//                        pInvMap);
+//     }
+//}

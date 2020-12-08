@@ -9,6 +9,7 @@ adb shell "mkdir -p /data/local/tmp/test/"
 
 
 adb push ./test_4032x3024.NV21             /data/local/tmp/test/
+adb push ./test_out_org.png                 /data/local/tmp/test/
 adb push ../src/nlmOCL/PyramidNLM.cl        /data/local/tmp/test/
 adb push ./libCheeseSymbols/android/armeabi-v7a/bin/libNLM_OCL.a    /data/local/tmp/test/
 

@@ -8,3 +8,4 @@ data/
 .DS_Store
 app/libCheeseSymbols
 test_4032x3024.NV21
+test_out_org.png
