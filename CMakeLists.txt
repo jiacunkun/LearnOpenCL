@@ -2,11 +2,13 @@
 cmake_minimum_required(VERSION 3.5)
 project(NLM_OCL)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -DANDROIDELF")
+
 # 编译选项
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /Wall")
 else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra ")
     if(LINUX_DISTRIBUTION)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2")
     endif()
@@ -22,6 +24,16 @@ set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
 # 将 `LIBRARY_NAME` 改为你的名称就好
 set(LIBRARY_NAME NLM_OCL)
 set(LIBRARY_INCLUDE_DIRS "${CMAKE_CURRENT_LIST_DIR}/include")
+
+add_compile_options(-Wno-ignored-qualifiers)
+add_compile_options(-Wno-unused-parameter)
+add_compile_options(-Wno-unused-private-field)
+add_compile_options(-Wno-vunused-variable)
+add_compile_options(-Wno-unused-command-line-argument)
+add_compile_options(-Wno-unused-label)
+add_compile_options(-Wno-unknown-warning-option)
+add_compile_options(-Wno-unused-variable)
+
 
 # 加入项目另外两个部分
 # 源代码

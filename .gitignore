@@ -4,3 +4,5 @@ cmake-build-release/
 out/
 .vs/
 data/
+app/libCheeseSymbols
+.DS_Store

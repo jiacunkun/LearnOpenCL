@@ -5,6 +5,7 @@
 #include "CLMat.h"
 #include "PyramidNLM_OCL_init.h"
 #include "ArcsoftLog.h"
+#include "BasicTimer.h"
 
 USING_NS_SINFLE_IMAGE_ENHANCEMENT
 
@@ -14,7 +15,6 @@ bool runPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseF
     {
         LOG(ERROR) << "The object is not created. Please call GSampleResizeOCLRetriever::registerToGlobalHolder to register";
         return false;
-
     }
 
     return GPyramidNLM_OCLRetriever::get().run(src, dst, fNoiseVar, bIsDenoiseFor0);
@@ -39,6 +39,7 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
 
     MInt32 lRet = 0;
 
+    BasicTimer time;
     // init env
     {
         if (g_is_initialized)
@@ -56,6 +57,7 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         g_is_initialized = true;
 
     }
+    time.PrintTime("1");
 
     // run
     {
@@ -84,8 +86,11 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
 
         // run GPU
         {
+            time.PrintTime("2");
             lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, true);
+            time.PrintTime("3_y");
             lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
+            time.PrintTime("4_uv");
         }
 
 
@@ -95,6 +100,8 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         acv::Mat uv_dst_mat(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[1],
                             pDst->pi32Pitch[1]); // create a buffer on the host
         lRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
+
+        time.PrintTime("5");
 
     }
 
@@ -110,6 +117,7 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         g_ocl_initializer.unInit(); // uninitializtion for ocl should be the most tail of the library
         g_is_initialized = false;
     }
+    time.PrintTime("6");
 
     LOGD("PyramidNLM_OCL_Handle++");
     return lRet - 1;

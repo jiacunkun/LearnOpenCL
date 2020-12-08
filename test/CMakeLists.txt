@@ -3,6 +3,8 @@ include("${CMAKE_SOURCE_DIR}/cmake/libmobilecv-config.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/libmpbase-config.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/libyuv-config.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/libacv_oclcore-config.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/libopencv-config.cmake")
+
 
 if(ANDROID)
 
@@ -25,10 +27,11 @@ include_directories(
         ${CMAKE_SOURCE_DIR}/src/nlmOCL/
         ${CMAKE_SOURCE_DIR}/src/CL/
         ${CMAKE_SOURCE_DIR}/src/
+        ${CMAKE_SOURCE_DIR}/src/common
 )
 
 if(ANDROID)
-    file(GLOB MAIN_DIR ./test_android.cpp)
+    file(GLOB MAIN_DIR ./test_android.cpp  ./clog.c)
 else()
     file(GLOB MAIN_DIR ./sample.cpp)
 endif()

@@ -166,7 +166,7 @@ kernel void ImageAddImage
 }
 
 
-inline int  GetBlockDiff(const global uchar *pCurBlock, const global uchar *pNeiBlock, int lPitch)
+inline int GetBlockDiff(const global uchar *pCurBlock, const global uchar *pNeiBlock, int lPitch)
 {
     int lDif = 0;
     int lPDif = 0;

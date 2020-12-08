@@ -34,7 +34,7 @@ else()
 
     # debug properties
     add_library(acv_oclcore STATIC IMPORTED)
-    message(${acv_oclcore_ROOT})
+#    message(${acv_oclcore_ROOT})
     set_target_properties(acv_oclcore PROPERTIES
             IMPORTED_LOCATION "${acv_oclcore_ROOT}/libarcsoft_acv_oclcore.a"
             )
