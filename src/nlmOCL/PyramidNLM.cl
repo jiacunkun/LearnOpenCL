@@ -233,6 +233,22 @@ kernel void Resize
 }
 
 
+kernel void MakeWeightMap
+(
+	global int *pTable,
+    const float fVar,
+    const int lMaxNum 
+)
+{
+    int x = get_global_id(0);
+	int y = get_global_id(1);
+
+    float SumVar = fVar * 2 * 16 * 16;
+    int lVal = x * x; 
+    lVal = (int) ( 255.0 * exp(-lVal / SumVar) + 0.5f );
+    pTable[ x ] = lVal;     
+}
+
 kernel void CopyAndPaddingImage(global uchar *src_ptr,
                                 const int src_step,
                                 const int src_cols,
@@ -466,6 +482,7 @@ inline void AddBlockSum(const global uchar *pNeiBlock, int lPitch, int *lSumWei,
     lSumWei[ 16 ] += pNeiBlock[ 3 ] * lW;
 }
 
+
 inline void AddBlockSumByNei
  (
     const global uchar *pCurBlock,
@@ -484,8 +501,8 @@ inline void AddBlockSumByNei
 
 inline void GetBlockResult(global uchar *pDstBlock,
                            int lPitch,
-                           int *lSumWei,
-                           const global int *pInvMap)
+                           int *lSumWei
+                          )
 {
     int lSW = lSumWei[ 0 ];
     int lInvW = (1 << 20) / lSW;
@@ -525,8 +542,7 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
                             const global uchar *pNexLine,
                             global uchar *pDstLine,
                             const global int *pMap,
-                            int lPitch,
-                            const global int *pInvMap
+                            int lPitch
                             )
 {
     // 权重表清零
@@ -548,175 +564,7 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
     AddBlockSumByNei(pCurLine, pNexLine + 1, lPitch, lSumWei, pMap);
 
     // average / sweight
-    GetBlockResult(pDstLine, lPitch, lSumWei, pInvMap);
-}
-
-// 单行降噪
-inline void ProcessLinesBroundMain(const global uchar *pCurLine,
-                                          const global uchar *pPreLine, 
-                                           global uchar *pDstLine,
-                                          int lWidth,
-                                          const global int *pMap,
-                                          const global int *pInvMap)
-{
-    int lWSum = 0;
-    int lSumW = 0;
-    int lCVal = 0, lNVal = 0;
-    int lDVal = 0;
-    int lTmpW = 0;
-    int lInvW = 0;
-    int lDif = 0;
-    int x = 0;
-    //left point
-    lCVal = pCurLine[ 0 ];
-    lWSum = 256;
-    lSumW = 256 * lCVal;
-    lNVal = pCurLine[ 1 ];
-
-    ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-    lNVal = pPreLine[ 0 ];
-    ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-    lNVal = pPreLine[ 1 ];
-    ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-
-    lInvW = pInvMap[ lWSum ];
-    lDVal = ( lSumW * lInvW + ( 1 << 19 )) >> 20;
-    //pDstLine[0] = (lDVal - lCVal >> 1) + 128;
-    pDstLine[ 0 ] = lDVal;
-
-    //med point
-    for(x = 1; x < lWidth - 1; x++)
-    {
-        lCVal = pCurLine[ x ];
-        lWSum = 256;
-        lSumW = 256 * lCVal;
-
-        lNVal = pCurLine[ x - 1 ];
-        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-        lNVal = pCurLine[ x + 1 ];
-        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-
-        lNVal = pPreLine[ x - 1 ];
-        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-        lNVal = pPreLine[ x ];
-        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-        lNVal = pPreLine[ x + 1 ];
-        ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-
-        lInvW = pInvMap[ lWSum ];
-        lDVal = ( lSumW * lInvW + +( 1 << 19 )) >> 20;
-        pDstLine[ x ] = lDVal;
-        //pDstLine[x] = (lDVal - lCVal >> 1) + 128;
-    }
-
-    //right point
-    lCVal = pCurLine[ lWidth - 1 ];
-    lWSum = 256;
-    lSumW = 256 * lCVal;
-
-    lNVal = pCurLine[ lWidth - 2 ];
-    ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-    lNVal = pPreLine[ lWidth - 2 ];
-    ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-    lNVal = pPreLine[ lWidth - 1 ];
-    ADD_POINT_WEI(lNVal, lCVal, lDif, lWSum, lSumW, lTmpW, pMap);
-
-    lInvW = pInvMap[ lWSum ];
-    lDVal = ( lSumW * lInvW + ( 1 << 19 )) >> 20;
-    pDstLine[ lWidth - 1 ] = lDVal;
-}
-
- inline void ProcessPointBround(const global uchar *pCurPoint,
-                                const global uchar *pPrePoint,
-                                const global uchar *pNexPoint,
-                                global uchar *pDstPoint,
-                                const global int *pMap,
-                                const global int *pInvMap,
-                                int l_add)
- {
-     int lNVal = 0;
-     int lDif = 0, lTmpW = 0;
-     int lInvW = 0, lDVal = 0;
-
-     int nCurrentVal = pCurPoint[ 0 ];
-     int nWeight = 256;
-     int nAverage = nCurrentVal * 256;
-
-     lNVal = pCurPoint[ l_add ];
-     ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-
-     lNVal = pPrePoint[ 0 ];
-     ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-     lNVal = pPrePoint[ l_add ];
-     ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-
-     lNVal = pNexPoint[ 0 ];
-     ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-     lNVal = pNexPoint[ l_add ];
-     ADD_POINT_WEI(lNVal, nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-
-     lInvW = pInvMap[ nWeight ];
-     lDVal = ( nAverage * lInvW + ( 1 << 19 )) >> 20;
-     pDstPoint[ 0 ] = lDVal;
- }
-
-inline void ProcessPoint(const global uchar *pCurPoint,
-                         const global uchar *pPrePoint,
-                         const global uchar *pNexPoint,
-                         global uchar *pDstPoint,
-                         const global int *pMap,
-                         const global int *pInvMap)
-{
-    int lDif = 0;
-    int lTmpW = 0;
-
-    int nCurrentVal = pCurPoint[ 0 ];
-    int nWeight = 256;
-    int nAverage = nCurrentVal * nWeight;
-
-    ADD_POINT_WEI(pCurPoint[ -1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-    ADD_POINT_WEI(pCurPoint[ 1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-
-    ADD_POINT_WEI(pPrePoint[ -1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-    ADD_POINT_WEI(pPrePoint[ 0 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-    ADD_POINT_WEI(pPrePoint[ 1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-
-    ADD_POINT_WEI(pNexPoint[ -1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-    ADD_POINT_WEI(pNexPoint[ 0 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-    ADD_POINT_WEI(pNexPoint[ 1 ], nCurrentVal, lDif, nWeight, nAverage, lTmpW, pMap);
-
-    int lInvW = pInvMap[ nWeight ];
-    int lDVal = ( nAverage * lInvW + ( 1 << 19 )) >> 20;
-    pDstPoint[ 0 ] = lDVal;
-}
-
-inline void ProcessLines1Main(const global uchar *pCurLine,
-                              const global uchar *pPreLine,
-                              const global uchar *pNexLine,
-                              global uchar *pDstLine,
-                              int lWidth,
-                              const global int *pMap,
-                              const global int *pInvMap)
-{
-    //left point
-    ProcessPointBround(pCurLine, pPreLine, pNexLine, pDstLine, pMap, pInvMap, 1);
-
-    //med point
-    pCurLine++;
-    pPreLine++;
-    pNexLine++;
-    pDstLine++;
-    for(int x = 1; x <= 4; x++)
-    {
-        ProcessPoint(pCurLine, pPreLine, pNexLine, pDstLine, pMap, pInvMap);
-        pCurLine++;
-        pPreLine++;
-        pNexLine++;
-        pDstLine++;
-    }
-
-    //right point
-    ProcessPointBround(pCurLine, pPreLine, pNexLine, pDstLine, pMap, pInvMap, -1);
+    GetBlockResult(pDstLine, lPitch, lSumWei);
 }
 
 
@@ -730,8 +578,7 @@ kernel void NLMDenoise
 	int dst_step,
 	int dst_cols,
 	int dst_rows,
-	const global int *pMap,
-	const global int *pInvMap
+	const global int *pMap
 )
 {
     //获取当前图像行和列
@@ -754,8 +601,8 @@ kernel void NLMDenoise
                         pNexLine,
                         pDstLine,
                         pMap,
-                        src_step,
-                        pInvMap);
+                        src_step
+                        );
         #endif
     }
 }

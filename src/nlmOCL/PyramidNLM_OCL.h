@@ -33,6 +33,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool ImageAddImage(CLMat& srcDst, CLMat& src);
             bool CopyAndPaddingImage(CLMat &src, CLMat& dst, int lExpandSize);
             bool CopyAndDePaddingImage(CLMat &src, CLMat& dst, int lExpandSize);
+            bool MakeWeightMap(CLMat &Table, MFloat fVar, MInt32 lMaxNum);
 
         private:
             CLKernel& getKernelOfResize(int n);
@@ -45,6 +46,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLKernel& getKernelOfPyramidUp(int n);
             CLKernel& getKernelOfCopyAndPaddingImage(int n);
             CLKernel& getKernelOfCopyAndDePaddingImage(int n);
+            CLKernel& getKernelOfMakeWeightMap(int n);
 
         private:
             CLProgram m_Program;
@@ -55,7 +57,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         private:
             // NLM降噪查表数据
-            MInt32 *m_pMap = MNull;
             MFloat m_fNoiseVar = -1;
         };
 

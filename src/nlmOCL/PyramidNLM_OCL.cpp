@@ -7,33 +7,14 @@
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
-
-        static MVoid MakeWeightMap(MInt32 *pTable, MFloat fVar, MInt32 lMaxNum)
-        {
-
-            MInt32 SumVar = fVar * 2 * 16 * 16;
-            pTable[ 0 ] = 256; 
-            for(MInt32 x = 1; x < lMaxNum; x++)
-            {
-                MFloat lVal = x * x; 
-                lVal = ( MInt32 ) ( 255.0 * exp(-lVal / SumVar) + 0.5f );
-                pTable[ x ] = ( MByte ) lVal;
-                //printf("%f = %d, %d\n", fVar, x, pTable[ x ]);
-            }
-        }
-
-
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
             LOGD("PyramidNLM_OCL()");
-            m_pMap = new MInt32[16 * 50];
-           
         }
 
         PyramidNLM_OCL::~PyramidNLM_OCL()
         {
             LOGD("~PyramidNLM_OCL()");
-            SAFE_DELETE_ARRAY(m_pMap)
         }
 
        
@@ -77,6 +58,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             nIndex = insertKernel(m_Program, "CopyAndDePaddingImage");
             getKernelOfCopyAndDePaddingImage(nIndex);
+
+            nIndex = insertKernel(m_Program, "MakeWeightMap");
+            getKernelOfMakeWeightMap(nIndex);
 
             return true;
         }
@@ -150,6 +134,14 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             if (index == -1) index = n;
             return GlobalKernelsHolder::getKernel(index);
         }
+
+        CLKernel& PyramidNLM_OCL::getKernelOfMakeWeightMap(int n)
+        {
+            static int index = -1;
+            if (index == -1) index = n;
+            return GlobalKernelsHolder::getKernel(index);
+        }
+
 
 		void PyramidNLM_OCL::initBuffer(int nWidth, int nHeight, int nStep, int nLayer)
 		{
@@ -267,6 +259,27 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return bRet;
         }
 
+
+        bool PyramidNLM_OCL::MakeWeightMap(CLMat& Table, MFloat fVar, MInt32 lMaxNum)
+        {
+            bool bRet = true;
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
+            CLKernel& kernel = getKernelOfMakeWeightMap(0);
+            kernel.Args(Table, fVar, lMaxNum); // set argument
+            size_t global_size[] = { (size_t)(lMaxNum), (size_t)(1) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 1;
+            bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
+#if CALCULATE_TIME
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
+            return bRet;
+        }
+
         bool PyramidNLM_OCL::Resize(const CLMat& src/*uchar*/, CLMat& dst/*uchar*/, bool is_blocking) // the main function to call the kernel
         {
             bool bRet = true;
@@ -376,27 +389,17 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #endif
             bool bRet = true;
 
-            if (m_fNoiseVar != fNoiseVar)
-            {
-                MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
-                m_fNoiseVar = fNoiseVar;
-            }
-
-            Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
-
-            CLMat map_clmat, invMap_clmat;
+            CLMat map_clmat;
             //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
             //{
             //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //	invMap_clmat.create_with_svm(1, 256 * 9 + 1, ACV_32SC1);
             //}
             //else
             {
-                map_clmat.create_with_clmem(1, 16*50, ACV_32SC1);
-                invMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
+                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
             }
-
-            map_clmat.copyFrom(map_mat);
+            
+            MakeWeightMap(map_clmat, fNoiseVar, 16 * 50);
 
             int src_step = src.stride(0);
             int src_cols = src.cols();
@@ -430,7 +433,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #endif
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
-            kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, dstPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat, invMap_clmat); // set argument
+            kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, dstPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat); // set argument
             size_t global_size[] = { (size_t)(dstPad_cols +3>>2), (size_t)(dstPad_rows +3>>2) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
