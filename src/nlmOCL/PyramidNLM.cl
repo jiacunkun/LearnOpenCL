@@ -24,7 +24,7 @@
     lDif = ABS(lCVal - lNVal);                                                \
     lDif = MIN(49,lDif);                                                    \
     lDif = lDif * 9;                                                        \
-    lTmpW = pInvMap[lDif];                                                    \
+    lTmpW = (int)(pInvMap[lDif]);                                                    \
     lTmpW >>= 1;                                                            \
     lWSum += lTmpW;                                                            \
     lSumW += lNVal * lTmpW;                                                    \
@@ -594,6 +594,143 @@ inline void AddBlockSumByNei4
 
 
 
+//constant int4 vValue0 = {0, 0, 0, 0};
+//constant int4 v256 = {255, 255, 255, 255};
+//constant int4 v128 = {128, 128, 128, 128};
+//inline void ProcessBlock4x4(const global uchar *pCurLine,
+//                            const global uchar *pPreLine,
+//                            const global uchar *pNexLine,
+//                            global uchar *pDstLine,
+//                            const global int *pMap,
+//                            int lPitch,
+//                            const global int *pInvMap
+//                            )
+//{
+//    // 当前块, 权重设置为最大值256
+////    AddBlockSum(pCurLine, lPitch, lSumWei, 256);
+//
+//    short4 vCur[4];
+//    const global uchar *pNeiBlock = pCurLine;
+//    vCur[0] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
+//    vCur[1] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
+//    vCur[2] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
+//    vCur[3] = convert_short4(vload4(0, pNeiBlock));
+//
+//
+//    int lSumWei = 256;
+//    int4 vSumWei[4];
+//    vSumWei[0] = convert_int4(vCur[0]) << 8;
+//    vSumWei[1] = convert_int4(vCur[1]) << 8;
+//    vSumWei[2] = convert_int4(vCur[2]) << 8;
+//    vSumWei[3] = convert_int4(vCur[3]) << 8;
+//
+//
+//
+//
+//    // 领域8个位置
+//    AddBlockSumByNei4(vCur, pCurLine - 1, lPitch, vSumWei, &lSumWei, pMap);
+//    AddBlockSumByNei4(vCur, pCurLine + 1, lPitch, vSumWei, &lSumWei, pMap);
+//
+//    AddBlockSumByNei4(vCur, pPreLine - 1, lPitch, vSumWei, &lSumWei, pMap);
+//    AddBlockSumByNei4(vCur, pPreLine, lPitch, vSumWei, &lSumWei, pMap);
+//    AddBlockSumByNei4(vCur, pPreLine + 1, lPitch, vSumWei, &lSumWei, pMap);
+//
+//    AddBlockSumByNei4(vCur, pNexLine - 1, lPitch, vSumWei, &lSumWei, pMap);
+//    AddBlockSumByNei4(vCur, pNexLine, lPitch, vSumWei, &lSumWei, pMap);
+//    AddBlockSumByNei4(vCur, pNexLine + 1, lPitch, vSumWei, &lSumWei, pMap);
+//
+//
+//
+//    // average / sweight
+////    GetBlockResult(pCurLine, pDstLine, lPitch, lSumWei, pInvMap);
+//
+//    int lSW = lSumWei;
+//    int lInvW = pInvMap[ lSW ];
+//    int4 vInvW = {lInvW, lInvW, lInvW, lInvW};
+//
+//    int4 out;
+//    uchar4 out_char4;
+//    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
+//    out_char4 = convert_uchar4(out);
+//    vstore4(out_char4, 0, pDstLine);
+//    pDstLine += lPitch;
+//
+//    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
+//    out_char4 = convert_uchar4(out);
+//    vstore4(out_char4, 0, pDstLine);
+//    pDstLine += lPitch;
+//
+//    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
+//    out_char4 = convert_uchar4(out);
+//    vstore4(out_char4, 0, pDstLine);
+//    pDstLine += lPitch;
+//
+//    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
+//    out_char4 = convert_uchar4(out);
+//    vstore4(out_char4, 0, pDstLine);
+//    pDstLine += lPitch;
+//
+//
+////    int4 out;
+////    uchar4 out_char4;
+////    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
+////    out = out - convert_int4(vCur[0]) + v128;
+////    out = clamp(out, vValue0, v256);
+////    vstore4(convert_uchar4(out), 0, pDstLine);
+////    pDstLine += lPitch;
+////
+////    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
+////    out = out - convert_int4(vCur[1]) + v128;
+////    out = clamp(out, vValue0, v256);
+////    vstore4(convert_uchar4(out), 0, pDstLine);
+////    pDstLine += lPitch;
+////
+////    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
+////    out = out - convert_int4(vCur[2]) + v128;
+////    out = clamp(out, vValue0, v256);
+////    vstore4(convert_uchar4(out), 0, pDstLine);
+////    pDstLine += lPitch;
+////
+////    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
+////    out = out - convert_int4(vCur[3]) + v128;
+////    out = clamp(out, vValue0, v256);
+////    vstore4(convert_uchar4(out), 0, pDstLine);
+////    pDstLine += lPitch;
+//}
+
+
+
+#define AddBlockSumByNei_Define() \
+    vDiff = abs_diff(vCur[0], neiBlock0);       \
+    vDiff = min(vDiff, v49);                    \
+    vDiffSum = vDiff;                           \
+                                                \
+    vDiff = abs_diff(vCur[1], neiBlock1);       \
+    vDiff = min(vDiff, v49);                    \
+    vDiffSum += vDiff;                          \
+                                                \
+    vDiff = abs_diff(vCur[2], neiBlock2);       \
+    vDiff = min(vDiff, v49);                    \
+    vDiffSum += vDiff;                          \
+                                                \
+    vDiff = abs_diff(vCur[3], neiBlock3);       \
+    vDiff = min(vDiff, v49);                    \
+    vDiffSum += vDiff;                          \
+                                                \
+    lDif = vDiffSum.s0 + vDiffSum.s1 + vDiffSum.s2 + vDiffSum.s3;    \
+    lW = (int)(pMap[lDif]);                                                 \
+    lW >>= 1;                                                        \
+                                                                     \
+    vWeight = (int4)(lW, lW, lW, lW);                                \
+    vSumWei[0] += convert_int4(neiBlock0) * vWeight;                 \
+    vSumWei[1] += convert_int4(neiBlock1) * vWeight;                 \
+    vSumWei[2] += convert_int4(neiBlock2) * vWeight;                 \
+    vSumWei[3] += convert_int4(neiBlock3) * vWeight;                 \
+    lSumWei += lW;
+
+
+
+/// new
 constant int4 vValue0 = {0, 0, 0, 0};
 constant int4 v256 = {255, 255, 255, 255};
 constant int4 v128 = {128, 128, 128, 128};
@@ -601,20 +738,29 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
                             const global uchar *pPreLine,
                             const global uchar *pNexLine,
                             global uchar *pDstLine,
-                            const global int *pMap,
+                            const global uchar *pMap,
                             int lPitch,
                             const global int *pInvMap
                             )
 {
-    // 当前块, 权重设置为最大值256
-//    AddBlockSum(pCurLine, lPitch, lSumWei, 256);
+    uchar8 data[6];
+    const global uchar *pNeiBlock = pCurLine - lPitch - 1;
+    data[0] = vload8(0, pNeiBlock);   pNeiBlock += lPitch;
+    data[1] = vload8(0, pNeiBlock);   pNeiBlock += lPitch;
+    data[2] = vload8(0, pNeiBlock);   pNeiBlock += lPitch;
+    data[3] = vload8(0, pNeiBlock);   pNeiBlock += lPitch;
+    data[4] = vload8(0, pNeiBlock);   pNeiBlock += lPitch;
+    data[5] = vload8(0, pNeiBlock);   pNeiBlock += lPitch;
 
+
+    /// ========================================================
+    /// 中心
+    /// ========================================================
     short4 vCur[4];
-    const global uchar *pNeiBlock = pCurLine;
-    vCur[0] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
-    vCur[1] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
-    vCur[2] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
-    vCur[3] = convert_short4(vload4(0, pNeiBlock));
+    vCur[0] = convert_short4((uchar4)(data[1].s1234));
+    vCur[1] = convert_short4((uchar4)(data[2].s1234));
+    vCur[2] = convert_short4((uchar4)(data[3].s1234));
+    vCur[3] = convert_short4((uchar4)(data[4].s1234));
 
 
     int lSumWei = 256;
@@ -625,27 +771,112 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
     vSumWei[3] = convert_int4(vCur[3]) << 8;
 
 
-
-
-    // 领域8个位置
-    AddBlockSumByNei4(vCur, pCurLine - 1, lPitch, vSumWei, &lSumWei, pMap);
-    AddBlockSumByNei4(vCur, pCurLine + 1, lPitch, vSumWei, &lSumWei, pMap);
-
-    AddBlockSumByNei4(vCur, pPreLine - 1, lPitch, vSumWei, &lSumWei, pMap);
-    AddBlockSumByNei4(vCur, pPreLine, lPitch, vSumWei, &lSumWei, pMap);
-    AddBlockSumByNei4(vCur, pPreLine + 1, lPitch, vSumWei, &lSumWei, pMap);
-
-    AddBlockSumByNei4(vCur, pNexLine - 1, lPitch, vSumWei, &lSumWei, pMap);
-    AddBlockSumByNei4(vCur, pNexLine, lPitch, vSumWei, &lSumWei, pMap);
-    AddBlockSumByNei4(vCur, pNexLine + 1, lPitch, vSumWei, &lSumWei, pMap);
+    /// ========================================================
+    /// 中, 左
+    /// ========================================================
+    short4 neiBlock0, neiBlock1, neiBlock2, neiBlock3;
+    ushort4 vDiffSum;
+    ushort4 vDiff;
+    ushort lDif;
+    int lW;
+    int4 vWeight;
 
 
 
-    // average / sweight
-//    GetBlockResult(pCurLine, pDstLine, lPitch, lSumWei, pInvMap);
+    /// ========================================================
+    /// 中, 左
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[1].s0123));
+    neiBlock1 = convert_short4((uchar4)(data[2].s0123));
+    neiBlock2 = convert_short4((uchar4)(data[3].s0123));
+    neiBlock3 = convert_short4((uchar4)(data[4].s0123));
 
-    int lSW = lSumWei;
-    int lInvW = pInvMap[ lSW ];
+    AddBlockSumByNei_Define()
+
+
+    /// ========================================================
+    /// 中, 右
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[1].s2345));
+    neiBlock1 = convert_short4((uchar4)(data[2].s2345));
+    neiBlock2 = convert_short4((uchar4)(data[3].s2345));
+    neiBlock3 = convert_short4((uchar4)(data[4].s2345));
+
+    AddBlockSumByNei_Define()
+
+
+    /// ========================================================
+    /// 上, 左
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[0].s0123));
+    neiBlock1 = convert_short4((uchar4)(data[1].s0123));
+    neiBlock2 = convert_short4((uchar4)(data[2].s0123));
+    neiBlock3 = convert_short4((uchar4)(data[3].s0123));
+
+    AddBlockSumByNei_Define()
+
+
+    /// ========================================================
+    /// 上, 中
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[0].s1234));
+    neiBlock1 = convert_short4((uchar4)(data[1].s1234));
+    neiBlock2 = convert_short4((uchar4)(data[2].s1234));
+    neiBlock3 = convert_short4((uchar4)(data[3].s1234));
+
+    AddBlockSumByNei_Define()
+
+
+    /// ========================================================
+    /// 上, 左
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[0].s2345));
+    neiBlock1 = convert_short4((uchar4)(data[1].s2345));
+    neiBlock2 = convert_short4((uchar4)(data[2].s2345));
+    neiBlock3 = convert_short4((uchar4)(data[3].s2345));
+
+    AddBlockSumByNei_Define()
+
+
+    /// ========================================================
+    /// 下, 左
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[2].s0123));
+    neiBlock1 = convert_short4((uchar4)(data[3].s0123));
+    neiBlock2 = convert_short4((uchar4)(data[4].s0123));
+    neiBlock3 = convert_short4((uchar4)(data[5].s0123));
+
+    AddBlockSumByNei_Define()
+
+
+    /// ========================================================
+    /// 下, 中
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[2].s1234));
+    neiBlock1 = convert_short4((uchar4)(data[3].s1234));
+    neiBlock2 = convert_short4((uchar4)(data[4].s1234));
+    neiBlock3 = convert_short4((uchar4)(data[5].s1234));
+
+    AddBlockSumByNei_Define()
+
+
+    /// ========================================================
+    /// 下, 左
+    /// ========================================================
+    neiBlock0 = convert_short4((uchar4)(data[2].s2345));
+    neiBlock1 = convert_short4((uchar4)(data[3].s2345));
+    neiBlock2 = convert_short4((uchar4)(data[4].s2345));
+    neiBlock3 = convert_short4((uchar4)(data[5].s2345));
+
+    AddBlockSumByNei_Define()
+
+
+
+
+    /// ========================================================
+    ///  average / sweight
+    /// ========================================================
+    int lInvW = pInvMap[ lSumWei ];
     int4 vInvW = {lInvW, lInvW, lInvW, lInvW};
 
     int4 out;
@@ -670,32 +901,6 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
     vstore4(out_char4, 0, pDstLine);
     pDstLine += lPitch;
 
-
-//    int4 out;
-//    uchar4 out_char4;
-//    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
-//    out = out - convert_int4(vCur[0]) + v128;
-//    out = clamp(out, vValue0, v256);
-//    vstore4(convert_uchar4(out), 0, pDstLine);
-//    pDstLine += lPitch;
-//
-//    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
-//    out = out - convert_int4(vCur[1]) + v128;
-//    out = clamp(out, vValue0, v256);
-//    vstore4(convert_uchar4(out), 0, pDstLine);
-//    pDstLine += lPitch;
-//
-//    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
-//    out = out - convert_int4(vCur[2]) + v128;
-//    out = clamp(out, vValue0, v256);
-//    vstore4(convert_uchar4(out), 0, pDstLine);
-//    pDstLine += lPitch;
-//
-//    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
-//    out = out - convert_int4(vCur[3]) + v128;
-//    out = clamp(out, vValue0, v256);
-//    vstore4(convert_uchar4(out), 0, pDstLine);
-//    pDstLine += lPitch;
 }
 
 
@@ -705,7 +910,7 @@ inline void ProcessLinesBroundMain(const global uchar *pCurLine,
                                           const global uchar *pPreLine, 
                                            global uchar *pDstLine,
                                           int lWidth,
-                                          const global int *pMap,
+                                          const global uchar *pMap,
                                           const global int *pInvMap)
 {
     int lWSum = 0;
@@ -779,7 +984,7 @@ inline void ProcessLinesBroundMain(const global uchar *pCurLine,
                                 const global uchar *pPrePoint,
                                 const global uchar *pNexPoint,
                                 global uchar *pDstPoint,
-                                const global int *pMap,
+                                const global uchar *pMap,
                                 const global int *pInvMap,
                                 int l_add)
  {
@@ -813,7 +1018,7 @@ inline void ProcessPoint(const global uchar *pCurPoint,
                          const global uchar *pPrePoint,
                          const global uchar *pNexPoint,
                          global uchar *pDstPoint,
-                         const global int *pMap,
+                         const global uchar *pMap,
                          const global int *pInvMap)
 {
     int lDif = 0;
@@ -844,7 +1049,7 @@ inline void ProcessLines1Main(const global uchar *pCurLine,
                               const global uchar *pNexLine,
                               global uchar *pDstLine,
                               int lWidth,
-                              const global int *pMap,
+                              const global uchar *pMap,
                               const global int *pInvMap)
 {
     //left point
@@ -879,7 +1084,7 @@ kernel void NLMDenoise
 	int dst_step,
 	int dst_cols,
 	int dst_rows,
-	const global int *pMap,
+	const global uchar *pMap,
 	const global int *pInvMap
 )
 {

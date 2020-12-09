@@ -21,12 +21,19 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 
 
-        static MVoid MakeWeightMap(MInt32 *pTable, MFloat fVar, MInt32 lMaxNum)
+        static MVoid MakeWeightMap(MByte *pTable, MFloat fVar)
         {
+            /// fVar 越大, 匹配块的权重越大, 越模糊
+            /// 匹配块权重为 weight = exp(-1250 / fVar);
             // lMaxNum = 16 * 50
+
+            if(fVar <= 0)
+            {
+                fVar = 1;
+            }
             MInt32 SumVar = fVar * 2 * 16 * 16;
-            pTable[ 0 ] = 256; 
-            for(MInt32 x = 1; x < lMaxNum; x++)
+            pTable[ 0 ] = 255;
+            for(MInt32 x = 1; x < 16 * 50; x++)
             {
                 MFloat lVal = x * x; 
                 lVal = ( MInt32 ) ( 255.0 * exp(-lVal / SumVar) + 0.5f );
@@ -38,14 +45,14 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
-            m_pMap_clmat.create_with_clmem(1, 16*50, ACV_32SC1);
+            m_pMap_clmat.create_with_clmem(1, 16*50, ACV_8UC1);
             m_pInvMap_clmat.create_with_clmem(1, 256 * 9 + 1, ACV_32SC1);
 
 
             m_fNoiseVar = 20.0; /// 预先设定值
-            m_pMap = new MInt32[16 * 50];
-            MakeWeightMap(m_pMap, m_fNoiseVar, 16 * 50);
-            Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
+            m_pMap = new MByte[16 * 50];
+            MakeWeightMap(m_pMap, m_fNoiseVar);
+            Mat map_mat(1, 16*50, ACV_8UC1, m_pMap);
             m_pMap_clmat.copyFrom(map_mat, true);
 
 
@@ -212,9 +219,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLMat m_TempImg[4];
             for (int i = 0; i < nLayer; i++)
             {
-                m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                int h = (nHeight >> i);
+                m_PyrDownImg[i].create_with_clmem(h, nWidth >> i, ACV_8UC1);
+                m_DenoiseImg[i].create_with_clmem(h, nWidth >> i, ACV_8UC1);
+                m_TempImg[i].create_with_clmem(h, nWidth >> i, ACV_8UC1);
             }
             timer.PrintTime("py 1 new buffer");
 
@@ -378,8 +386,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             if (m_fNoiseVar != fNoiseVar)
             {
                 m_fNoiseVar = fNoiseVar;
-                MakeWeightMap(m_pMap, fNoiseVar, 16 * 50);
-                Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
+                MakeWeightMap(m_pMap, fNoiseVar);
+                Mat map_mat(1, 16*50, ACV_8UC1, m_pMap);
                 m_pMap_clmat.copyFrom(map_mat, true);
             }
 
