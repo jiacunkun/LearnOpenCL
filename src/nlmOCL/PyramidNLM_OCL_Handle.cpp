@@ -12,7 +12,7 @@ USING_NS_SINFLE_IMAGE_ENHANCEMENT
 static bool g_is_initialized = false;
 static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // init env handle
 
-static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 0.2.4!\n";
+static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 0.3.8!\n";
 
 MInt32 PyramidNLM_OCL_Init()
 {
@@ -70,12 +70,12 @@ MInt32 PyramidNLM_OCL_Handle(MHandle handle, LPASVLOFFSCREEN pSrc, LPASVLOFFSCRE
                         pSrc->pi32Pitch[1]); // set pointer to a Mat
         acv::ocl::CLMat y_clmat;
         acv::ocl::CLMat uv_clmat;
-        //if (y_clmat.is_svm_available()) // an eample to use SVM buffer
-        //{
-        //	y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
-        //    uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
-        //}
-        //else
+        if (y_clmat.is_svm_available()) // an eample to use SVM buffer
+        {
+        	y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
+            uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
+        }
+        else
         {
             y_clmat.create_with_clmem(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
             uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
@@ -87,8 +87,14 @@ MInt32 PyramidNLM_OCL_Handle(MHandle handle, LPASVLOFFSCREEN pSrc, LPASVLOFFSCRE
 
         // run GPU
         {
+#if CALCULATE_TIME
+            BasicTimer time;
+#endif
             lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, false);
             lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
+#if CALCULATE_TIME
+            LOGD("%s[%d]: run NLM is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
         }
 
 

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 #include "PyramidNLM_OCL_Handle.h"
+#include "ArcsoftLog.h"
+#include "BasicTimer.h"
 
 using namespace std;
 
@@ -156,9 +158,16 @@ int main(int argc, char* argv[])
     {
         MFloat fNoiseVarY = 100;
         MFloat fNoiseVarUV = 100;
+
+        BasicTimer time;
+        LOGD("PyramidNLM_OCL_Init");
         PyramidNLM_OCL_Init();
+        LOGD("%s[%d]: init is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
         lret = PyramidNLM_OCL_Handle(MNull, &guided, &guided, fNoiseVarY, fNoiseVarUV);
+        LOGD("%s[%d]: NLM is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
         PyramidNLM_OCL_Uninit();
+        LOGD("%s[%d]: Uninit is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+        LOGD("PyramidNLM_OCL_Uninit");
     }
 
     if (1)

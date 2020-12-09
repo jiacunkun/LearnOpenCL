@@ -193,6 +193,16 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nHeight = src.rows();
             int nLayer = 4; //layer of pyramid
 
+            // init map 
+            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
+            //}
+            //else
+            {
+                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
+            }
+
             // new blank memory
             CLMat m_PyrDownImg[4];
             CLMat m_DenoiseImg[4];
@@ -389,15 +399,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #endif
             bool bRet = true;
 
-            CLMat map_clmat;
-            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
-            //{
-            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //}
-            //else
-            {
-                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
-            }
+          
             
             MakeWeightMap(map_clmat, fNoiseVar, 16 * 50);
 
@@ -426,10 +428,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //Mat tmpdst = srcPad_clmat.map();
             //src.unmap();
             //srcPad_clmat.unmap();
-#endif
-
-#if CALCULATE_TIME
-            LOGD("%s[%d]: calculate map is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
