@@ -1,19 +1,6 @@
 #include "Arcsoft_Copy_To_FilledImage.h"
 
-NS_SINFLE_IMAGE_ENHANCEMENT_BEGIN
-    template <typename T>
-    MVoid Arcsoft_Copy_To_FilledImage(ImageInfo<T>* pSrcImage, ImageInfo<T>* pDstImage, MInt32 lExpandSize)
-    {
-        Arcsoft_Copy_To_FilledImage(pSrcImage->pData,
-                                    pSrcImage->lWidth,
-                                    pSrcImage->lHeight,
-                                    pSrcImage->lPitch,
-                                    lExpandSize,
-                                    pDstImage->pData,
-                                    pDstImage->lWidth,
-                                    pDstImage->lHeight,
-                                    pDstImage->lPitch);
-    }
+NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
     template <typename T>
     MVoid Arcsoft_Copy_To_FilledImage(T* pSrc, MInt32 lWidth, MInt32 lHeight, MInt32 lStep, MInt32 lExpandSize,
@@ -59,4 +46,4 @@ NS_SINFLE_IMAGE_ENHANCEMENT_BEGIN
         }
     }
 
-NS_SINFLE_IMAGE_ENHANCEMENT_END
+NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END

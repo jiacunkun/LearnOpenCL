@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
         MFloat fNoiseVarY = 100;
         MFloat fNoiseVarUV = 100;
         PyramidNLM_OCL_Init();
-        lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
+        lret = PyramidNLM_OCL_Handle(MNull, &guided, &guided, fNoiseVarY, fNoiseVarUV);
         PyramidNLM_OCL_Uninit();
     }
 

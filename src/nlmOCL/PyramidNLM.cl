@@ -736,27 +736,26 @@ kernel void NLMDenoise
 {
     //获取当前图像行和列
     int x = get_global_id(0)*4;
-	int y = get_global_id(1)*4;
-
-    int idy1 = max(y-1, 0);
-    int idy2 = min(y+1, src_rows-1);
+	int y = get_global_id(1)*4 + 1;
 	
-	const global uchar *pCurLine = pSrc + src_step * y + x;
-    const global uchar *pPreLine = pSrc + src_step * idy1 + x;
-    const global uchar *pNexLine = pSrc + src_step * idy2 + x;
-    global uchar *pDstLine = pDst + dst_step * y + x;
+    if (x >=0 && x < src_cols - 4)
+    {
+        const global uchar *pCurLine = pSrc + src_step * y + x + 1;
+        const global uchar *pPreLine = pCurLine - src_step;
+        const global uchar *pNexLine = pCurLine + src_step;
+        global uchar *pDstLine = pDst + dst_step * y + x + 1;
 
-	#if 0 //并行加速
+        #if 0 //并行加速
 
 
-	#else
-	ProcessBlock4x4(pCurLine,
-                    pPreLine,
-                    pNexLine,
-                	pDstLine,
-                	pMap,
-                	src_step,
-                	pInvMap);
-	#endif
-		
+        #else
+        ProcessBlock4x4(pCurLine,
+                        pPreLine,
+                        pNexLine,
+                        pDstLine,
+                        pMap,
+                        src_step,
+                        pInvMap);
+        #endif
+    }
 }

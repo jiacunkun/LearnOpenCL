@@ -441,19 +441,20 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             srcPad_clmat.unmap();
 #endif
 
-            //CLKernel& kernel = getKernelOfNLMDenoise(0);
-            //kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, dstPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat, invMap_clmat); // set argument
-            //size_t global_size[] = { (size_t)(dst_cols+3>>2), (size_t)(dst_rows+3>>2) }; // set global size
-            ////size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
-            //size_t* local_size = nullptr;
-            //cl_uint dims = 2;
-            //bRet &= kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+            CLKernel& kernel = getKernelOfNLMDenoise(0);
+            kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, dstPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat, invMap_clmat); // set argument
+            size_t global_size[] = { (size_t)(dstPad_cols +3>>2), (size_t)(dstPad_rows +3>>2) }; // set global size
+            //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
+            size_t* local_size = nullptr;
+            cl_uint dims = 2;
+            bRet &= kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
 #if 1
-            bRet &= CopyAndDePaddingImage(srcPad_clmat, dst, lExpandSize);
-            Mat tmpsrc1 = srcPad_clmat.map();
+            bRet &= CopyAndDePaddingImage(dstPad_clmat, dst, lExpandSize);
+
+            Mat tmpsrc1 = dstPad_clmat.map();
             Mat tmpdst1 = dst.map();
-            srcPad_clmat.unmap();
+            dstPad_clmat.unmap();
             dst.unmap();
 #endif
 
