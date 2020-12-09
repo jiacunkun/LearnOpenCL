@@ -4,7 +4,6 @@
 #include "CLlogger.h"
 #include "ArcsoftLog.h"
 #include "BasicTimer.h"
-#include "Arcsoft_Copy_To_FilledImage.h"
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
@@ -435,10 +434,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             bRet &= CopyAndPaddingImage(src, srcPad_clmat, lExpandSize);
 
-            Mat tmpsrc = src.map();
-            Mat tmpdst = srcPad_clmat.map();
-            src.unmap();
-            srcPad_clmat.unmap();
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = srcPad_clmat.map();
+            //src.unmap();
+            //srcPad_clmat.unmap();
 #endif
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
@@ -452,10 +451,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #if 1
             bRet &= CopyAndDePaddingImage(dstPad_clmat, dst, lExpandSize);
 
-            Mat tmpsrc1 = dstPad_clmat.map();
-            Mat tmpdst1 = dst.map();
-            dstPad_clmat.unmap();
-            dst.unmap();
+            //Mat tmpsrc1 = dstPad_clmat.map();
+            //Mat tmpdst1 = dst.map();
+            //dstPad_clmat.unmap();
+            //dst.unmap();
 #endif
 
             //Mat tmpsrc = src.map();
