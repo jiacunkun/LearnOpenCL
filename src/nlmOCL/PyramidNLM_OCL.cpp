@@ -4,6 +4,7 @@
 #include "CLlogger.h"
 #include "ArcsoftLog.h"
 #include "BasicTimer.h"
+#include "Arcsoft_Copy_To_FilledImage.h"
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
@@ -408,10 +409,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            //Mat tmpsrc = src.map();
-            //Mat tmpdst = dst.map();
-            //src.unmap();
-            //dst.unmap();
+            Mat tmpsrc = src.map();
+            Mat tmpdst = dst.map();
+            src.unmap();
+            dst.unmap();
 #if CALCULATE_TIME
             LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif

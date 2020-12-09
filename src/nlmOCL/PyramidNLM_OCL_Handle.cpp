@@ -52,7 +52,7 @@ MVoid PyramidNLM_OCL_Uninit()
 
 }
 
-MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV)
+MInt32 PyramidNLM_OCL_Handle(MHandle handle, LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV)
 {
     LOGD("PyramidNLM_OCL_Handle++");
 
@@ -105,6 +105,6 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
     LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif
 
-    LOGD("PyramidNLM_OCL_Handle++");
+    LOGD("PyramidNLM_OCL_Handle--");
     return lRet - 1;
 }
