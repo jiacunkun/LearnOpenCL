@@ -8,17 +8,6 @@
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 
-        static MVoid MakeDivTable(MInt32 *pTable, MInt32 lSize)
-        {
-            for(MInt32 i = 1; i < lSize; i++) 
-            {
-                pTable[ i ] = ( 1 << 20 ) / i;
-            }
-            pTable[ 0 ] = pTable[ 1 ];
-        }
-
-
-
         static MVoid MakeWeightMap(MInt32 *pTable, MFloat fVar, MInt32 lMaxNum)
         {
 
@@ -38,16 +27,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             LOGD("PyramidNLM_OCL()");
             m_pMap = new MInt32[16 * 50];
-            m_pInvMap = new MInt32[256 * 9 + 1];
-
-            MakeDivTable(m_pInvMap, ( 256 * 9 + 1 ));
+           
         }
 
         PyramidNLM_OCL::~PyramidNLM_OCL()
         {
             LOGD("~PyramidNLM_OCL()");
             SAFE_DELETE_ARRAY(m_pMap)
-            SAFE_DELETE_ARRAY(m_pInvMap)
         }
 
        
@@ -385,6 +371,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             LOGD("NLMDenoise++");
 #if CALCULATE_TIME
+            BasicTimer time0;
             BasicTimer time;
 #endif
             bool bRet = true;
@@ -396,7 +383,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             }
 
             Mat map_mat(1, 16*50, ACV_32SC1, m_pMap);
-            Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, m_pInvMap);
 
             CLMat map_clmat, invMap_clmat;
             //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
@@ -411,7 +397,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             }
 
             map_clmat.copyFrom(map_mat);
-            invMap_clmat.copyFrom(invMap_mat);
 
             int src_step = src.stride(0);
             int src_cols = src.cols();
@@ -440,6 +425,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //srcPad_clmat.unmap();
 #endif
 
+#if CALCULATE_TIME
+            LOGD("%s[%d]: calculate map is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
+
             CLKernel& kernel = getKernelOfNLMDenoise(0);
             kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, dstPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat, invMap_clmat); // set argument
             size_t global_size[] = { (size_t)(dstPad_cols +3>>2), (size_t)(dstPad_rows +3>>2) }; // set global size
@@ -447,6 +436,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             bRet &= kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
+#if CALCULATE_TIME
+            LOGD("%s[%d]: NLM kernel time is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+#endif
 
 #if 1
             bRet &= CopyAndDePaddingImage(dstPad_clmat, dst, lExpandSize);
@@ -457,13 +450,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             //dst.unmap();
 #endif
 
-            //Mat tmpsrc = src.map();
-            //Mat tmpdst = dst.map();
-            //src.unmap();
-            //dst.unmap();
 #if CALCULATE_TIME
-            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
+            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time0.UpdateAndGetDelta());
 #endif
+
             LOGD("NLMDenoise--");
             return bRet;
         }
@@ -627,7 +617,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #if CALCULATE_TIME
             LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif
-            LOGD("PyramidUp--");
             return bRet;
 
         }
@@ -662,7 +651,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #if CALCULATE_TIME
             LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif
-            LOGD("PyramidUp--");
             return bRet;
 
         }

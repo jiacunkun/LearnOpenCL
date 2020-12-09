@@ -488,7 +488,7 @@ inline void GetBlockResult(global uchar *pDstBlock,
                            const global int *pInvMap)
 {
     int lSW = lSumWei[ 0 ];
-    int lInvW = pInvMap[ lSW ];
+    int lInvW = (1 << 20) / lSW;
     lSumWei++;
 
     pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;

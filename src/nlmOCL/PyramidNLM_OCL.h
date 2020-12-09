@@ -56,7 +56,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         private:
             // NLM降噪查表数据
             MInt32 *m_pMap = MNull;
-            MInt32 *m_pInvMap = MNull;
             MFloat m_fNoiseVar = -1;
         };
 
