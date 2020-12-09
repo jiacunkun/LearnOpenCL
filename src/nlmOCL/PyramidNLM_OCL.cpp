@@ -10,8 +10,9 @@
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 
-        static MVoid MakeDivTable(MInt32 *pTable, MInt32 lSize)
+        MVoid PyramidNLM_OCL::MakeDivTable(MInt32 *pTable)
         {
+            MInt32 lSize = 256 * 9 + 1;
             for(MInt32 i = 1; i < lSize; i++) 
             {
                 pTable[ i ] = ( 1 << 20 ) / i;
@@ -21,7 +22,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 
 
-        static MVoid MakeWeightMap(MByte *pTable, MFloat fVar)
+        MVoid PyramidNLM_OCL::MakeWeightMap(MByte *pTable, MFloat fVar)
         {
             /// fVar 越大, 匹配块的权重越大, 越模糊
             /// 匹配块权重为 weight = exp(-1250 / fVar);
@@ -58,7 +59,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 
             MInt32 pInvMap[256 * 9 + 1];
-            MakeDivTable(pInvMap, ( 256 * 9 + 1 ));
+            MakeDivTable(pInvMap);
             Mat invMap_mat(1, 256 * 9 + 1, ACV_32SC1, pInvMap);
             m_pInvMap_clmat.copyFrom(invMap_mat, true);
         }
@@ -406,6 +407,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             size_t w = (dst_cols + 3) >> 2;
             size_t h = (dst_rows + 3) >> 2;
+
+            w = (dst_cols - 2) >> 2;
+            h = (dst_rows - 2) >> 2;
+
             size_t global_size[] = { w, h }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;

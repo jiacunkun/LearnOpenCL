@@ -718,7 +718,7 @@ inline void AddBlockSumByNei4
     vDiffSum += vDiff;                          \
                                                 \
     lDif = vDiffSum.s0 + vDiffSum.s1 + vDiffSum.s2 + vDiffSum.s3;    \
-    lW = (int)(pMap[lDif]);                                                 \
+    lW = (int)(pMap[lDif]);                                          \
     lW >>= 1;                                                        \
                                                                      \
     vWeight = (int4)(lW, lW, lW, lW);                                \
@@ -876,7 +876,8 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
     /// ========================================================
     ///  average / sweight
     /// ========================================================
-    int lInvW = pInvMap[ lSumWei ];
+//    int lInvW = pInvMap[ lSumWei ];
+    int lInvW = (1 << 20) / lSumWei;
     int4 vInvW = {lInvW, lInvW, lInvW, lInvW};
 
     int4 out;
@@ -1074,6 +1075,124 @@ inline void ProcessLines1Main(const global uchar *pCurLine,
 }
 
 
+//kernel void NLMDenoise
+//(
+//	const global uchar *pSrc,
+//	int src_step,
+//	int src_cols,
+//	int src_rows,
+//	global uchar *pDst,
+//	int dst_step,
+//	int dst_cols,
+//	int dst_rows,
+//	const global uchar *pMap,
+//	const global int *pInvMap
+//)
+//{
+//    //获取当前图像行和列
+//    int x = get_global_id(0)*4;
+//	int y = get_global_id(1)*4 + 1;
+//
+//	// 第一行
+//     if (y == 1)
+//     {
+//        const global uchar *pCurLine = pSrc + src_step * (y - 1) + x;
+//        global uchar *pDstLine = pDst + dst_step * (y - 1) + x;
+//     	ProcessLinesBroundMain(pCurLine, pCurLine + src_step, pDstLine, src_cols, pMap, pInvMap);
+//     }
+//
+//	// 最后几行
+//	 if (src_rows - y <= 4)
+//     {
+//     	int diff = src_rows - y;
+//        for (int i = 0; i < diff-1; i++)
+//        {
+//            const global uchar *pCurLine = pSrc + src_step * (y + i) + x;
+//            global uchar *pDstLine = pDst + dst_step * (y + i) + x;
+//	   	    ProcessLines1Main(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, src_cols, pMap, pInvMap);
+//	    }
+//		{
+//			const global uchar *pCurLine = pSrc + src_step * (y + diff - 1) + x;
+//        	global uchar *pDstLine = pDst + dst_step * (y + diff - 1) + x;
+//     		ProcessLinesBroundMain(pCurLine, pCurLine - src_step, pDstLine, src_cols, pMap, pInvMap);
+//		}
+//	 }
+//
+//	// 中间行
+//	if (y >= 1 && y < src_rows - 4)
+//    {
+//		// 最左边的点
+//		if (x == 0)
+//		{
+//			const global uchar *pCurLine = pSrc + src_step * y + x;
+//    		global uchar *pDstLine = pDst + dst_step * y + x;
+//			int lShift = 0;
+//            ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, 1);
+//            lShift += src_step;
+//            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
+//            lShift += src_step;
+//            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
+//            lShift += src_step;
+//            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
+//            lShift += src_step;
+//		}
+//		// 最右边的几个点
+//		else if (src_cols - x <= 4)
+//		{
+//			int diff = src_cols - x;
+//			for (int i = 0; i < diff-1; i++)
+//			{
+//			    const global uchar *pCurLine = pSrc + src_step * y + x + i;
+//    		    global uchar *pDstLine = pDst + dst_step * y + x + i;
+//			    int lShift = 0;
+//			    ProcessPoint(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap);
+//                lShift += src_step;
+//                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+//                lShift += src_step;
+//                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+//                lShift += src_step;
+//                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
+//                lShift += src_step;
+//			}
+//
+//			//最右边的点
+//			{
+//			    const global uchar *pCurLine = pSrc + src_step * y + x + diff-1;
+//    		    global uchar *pDstLine = pDst + dst_step * y + x + diff-1;
+//			    int lShift = 0;
+//                ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, -1);
+//                lShift += src_step;
+//                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+//                lShift += src_step;
+//                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+//                lShift += src_step;
+//                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
+//                lShift += src_step;
+//			}
+//
+//		}
+//
+//		// 中间点
+//		if (x >=0 && x < src_cols - 4)
+//		{
+//			const global uchar *pCurLine = pSrc + src_step * y + x + 1;
+//            const global uchar *pPreLine = pCurLine - src_step;
+//            const global uchar *pNexLine = pCurLine + src_step;
+//    		global uchar *pDstLine = pDst + dst_step * y + x + 1;
+//
+//			ProcessBlock4x4(pCurLine,
+//                            pPreLine,
+//                            pNexLine,
+//                        	pDstLine,
+//                        	pMap,
+//                        	src_step,
+//                        	pInvMap);
+//		}
+//	}
+//}
+
+
+/// test 边缘不做处理
 kernel void NLMDenoise
 (
 	const global uchar *pSrc,
@@ -1092,141 +1211,18 @@ kernel void NLMDenoise
     int x = get_global_id(0)*4;
 	int y = get_global_id(1)*4 + 1;
 
-	// 第一行
-     if (y == 1)
-     {
-        const global uchar *pCurLine = pSrc + src_step * (y - 1) + x;
-        global uchar *pDstLine = pDst + dst_step * (y - 1) + x;
-     	ProcessLinesBroundMain(pCurLine, pCurLine + src_step, pDstLine, src_cols, pMap, pInvMap);
-     }
+    const global uchar *pCurLine = pSrc + src_step * y + x + 1;
+    const global uchar *pPreLine = pCurLine - src_step;
+    const global uchar *pNexLine = pCurLine + src_step;
+    global uchar *pDstLine = pDst + dst_step * y + x + 1;
 
-	// 最后几行
-	 if (src_rows - y <= 4)
-     {
-     	int diff = src_rows - y;
-        for (int i = 0; i < diff-1; i++)
-        {
-            const global uchar *pCurLine = pSrc + src_step * (y + i) + x;
-            global uchar *pDstLine = pDst + dst_step * (y + i) + x;
-	   	    ProcessLines1Main(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, src_cols, pMap, pInvMap);
-	    }
-		{
-			const global uchar *pCurLine = pSrc + src_step * (y + diff - 1) + x;
-        	global uchar *pDstLine = pDst + dst_step * (y + diff - 1) + x;
-     		ProcessLinesBroundMain(pCurLine, pCurLine - src_step, pDstLine, src_cols, pMap, pInvMap);
-		}
-	 }
-
-	// 中间行
-	if (y >= 1 && y < src_rows - 4)
-    {
-		// 最左边的点
-		if (x == 0)
-		{
-			const global uchar *pCurLine = pSrc + src_step * y + x;
-    		global uchar *pDstLine = pDst + dst_step * y + x;
-			int lShift = 0;
-            ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, 1);
-            lShift += src_step;
-            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
-            lShift += src_step;
-            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
-            lShift += src_step;
-            ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, 1);
-            lShift += src_step;
-		}
-		// 最右边的几个点
-		else if (src_cols - x <= 4)
-		{
-			int diff = src_cols - x;
-			for (int i = 0; i < diff-1; i++)
-			{
-			    const global uchar *pCurLine = pSrc + src_step * y + x + i;
-    		    global uchar *pDstLine = pDst + dst_step * y + x + i;
-			    int lShift = 0;
-			    ProcessPoint(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap);
-                lShift += src_step;
-                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
-                lShift += src_step;
-                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
-                lShift += src_step;
-                ProcessPoint(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap);
-                lShift += src_step;
-			}
-
-			//最右边的点
-			{
-			    const global uchar *pCurLine = pSrc + src_step * y + x + diff-1;
-    		    global uchar *pDstLine = pDst + dst_step * y + x + diff-1;
-			    int lShift = 0;
-                ProcessPointBround(pCurLine, pCurLine - src_step, pCurLine + src_step, pDstLine, pMap, pInvMap, -1);
-                lShift += src_step;
-                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
-                lShift += src_step;
-                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
-                lShift += src_step;
-                ProcessPointBround(pCurLine + lShift, pCurLine - src_step + lShift, pCurLine + src_step + lShift, pDstLine + lShift, pMap, pInvMap, -1);
-                lShift += src_step;
-			}
-
-		}
-
-		// 中间点
-		if (x >=0 && x < src_cols - 4)
-		{
-			const global uchar *pCurLine = pSrc + src_step * y + x + 1;
-            const global uchar *pPreLine = pCurLine - src_step;
-            const global uchar *pNexLine = pCurLine + src_step;
-    		global uchar *pDstLine = pDst + dst_step * y + x + 1;
-
-			ProcessBlock4x4(pCurLine,
-                            pPreLine,
-                            pNexLine,
-                        	pDstLine,
-                        	pMap,
-                        	src_step,
-                        	pInvMap);
-		}
-	}
+    ProcessBlock4x4(pCurLine,
+                    pPreLine,
+                    pNexLine,
+                    pDstLine,
+                    pMap,
+                    src_step,
+                    pInvMap);
 }
 
 
-
-
-///// yz123  0
-//kernel void NLMDenoise
-//(
-//	const global uchar *pSrc,
-//	int src_step,
-//	int src_cols,
-//	int src_rows,
-//	global uchar *pDst,
-//	int dst_step,
-//	int dst_cols,
-//	int dst_rows,
-//	const global int *pMap,
-//	const global int *pInvMap
-//)
-//{
-//    //获取当前图像行和列
-//    int x = get_global_id(0)*4 + 1;
-//	int y = get_global_id(1)*4 + 1;
-//
-//	int lSumWei[17] = {0};
-//
-//	const global uchar *pCurLine = pSrc + src_step * y + x;
-//    const global uchar *pPreLine = pCurLine - src_step;
-//    const global uchar *pNexLine = pCurLine + src_step;
-//    global uchar *pDstLine = pDst + dst_step * y + x;
-//
-//    if (y >= 1 && y < src_rows - 4 && x >=1 && x < src_cols - 4) {
-//        ProcessBlock4x4(pCurLine,
-//                        pPreLine,
-//                        pNexLine,
-//                        pDstLine,
-//                        pMap,
-//                        src_step,
-//                        lSumWei,
-//                        pInvMap);
-//     }
-//}

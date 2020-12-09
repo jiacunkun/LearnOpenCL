@@ -41,6 +41,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             bool ImageAddImage(CLMat &srcDst, CLMat &src);
 
+            MVoid MakeDivTable(MInt32 *pTable);
+
+            MVoid MakeWeightMap(MByte *pTable, MFloat fVar);
+
         private:
             CLKernel &getKernelOfResize(int n);
 
