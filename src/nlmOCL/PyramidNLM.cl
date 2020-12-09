@@ -325,6 +325,7 @@ kernel void ImageAddImage
 }
 
 
+
 inline int  GetBlockDiff(const global uchar *pCurBlock, const global uchar *pNeiBlock, int lPitch)
 {
     int lDif = 0;
@@ -526,7 +527,76 @@ inline void GetBlockResult(const global uchar *pCurLine,
 }
 
 
+
+
+constant ushort4 v49 = {49, 49, 49, 49};
+inline void AddBlockSumByNei4
+ (
+     short4* vCur,
+    const global uchar *pNeiBlock,
+    int lPitch,
+    int4 *vSumWei,
+    int *lSumWei,
+    const global int *pMap
+ )
+{
+
+    short4 neiBlock0 = convert_short4(vload4(0, pNeiBlock));   pNeiBlock += lPitch;
+    short4 neiBlock1 = convert_short4(vload4(0, pNeiBlock));   pNeiBlock += lPitch;
+    short4 neiBlock2 = convert_short4(vload4(0, pNeiBlock));   pNeiBlock += lPitch;
+    short4 neiBlock3 = convert_short4(vload4(0, pNeiBlock));
+
+
+
+
+    ushort4 vDiffSum;
+    ushort4 vDiff = abs_diff(vCur[0], neiBlock0);
+    vDiff = min(vDiff, v49);
+    vDiffSum = vDiff;
+
+
+    vDiff = abs_diff(vCur[1], neiBlock1);
+    vDiff = min(vDiff, v49);
+    vDiffSum += vDiff;
+
+
+    vDiff = abs_diff(vCur[2], neiBlock2);
+    vDiff = min(vDiff, v49);
+    vDiffSum += vDiff;
+
+
+    vDiff = abs_diff(vCur[3], neiBlock3);
+    vDiff = min(vDiff, v49);
+    vDiffSum += vDiff;
+
+
+
+    /// ==========================
+    ushort lDif = vDiffSum.s0 + vDiffSum.s1 + vDiffSum.s2 + vDiffSum.s3;
+    int lW = pMap[lDif]; // 获取权重, 查表法, exp(-d/(h^2))
+    lW >>= 1;  // ？？？
+
+
+    int4 vWeight = {lW, lW, lW, lW};
+//    mad(convert_int4(neiBlock0), vWeight, vSumWei[0]);   pNeiBlock += lPitch;
+//    mad(convert_int4(neiBlock1), vWeight, vSumWei[1]);   pNeiBlock += lPitch;
+//    mad(convert_int4(neiBlock2), vWeight, vSumWei[2]);   pNeiBlock += lPitch;
+//    mad(convert_int4(neiBlock3), vWeight, vSumWei[3]);   pNeiBlock += lPitch;
+
+    vSumWei[0] += convert_int4(neiBlock0) * vWeight;
+    vSumWei[1] += convert_int4(neiBlock1) * vWeight;
+    vSumWei[2] += convert_int4(neiBlock2) * vWeight;
+    vSumWei[3] += convert_int4(neiBlock3) * vWeight;
+    *lSumWei += lW;
+}
+
+
+
+
+
+constant int4 vValue0 = {0, 0, 0, 0};
 constant int4 v256 = {255, 255, 255, 255};
+constant int4 v128 = {128, 128, 128, 128};
 inline void ProcessBlock4x4(const global uchar *pCurLine,
                             const global uchar *pPreLine,
                             const global uchar *pNexLine,
@@ -536,70 +606,99 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
                             const global int *pInvMap
                             )
 {
-    // 权重表清零
-	int lSumWei[17] = {0};
-
     // 当前块, 权重设置为最大值256
-    AddBlockSum(pCurLine, lPitch, lSumWei, 256)
+//    AddBlockSum(pCurLine, lPitch, lSumWei, 256);
+
+    short4 vCur[4];
+    const global uchar *pNeiBlock = pCurLine;
+    vCur[0] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
+    vCur[1] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
+    vCur[2] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
+    vCur[3] = convert_short4(vload4(0, pNeiBlock));
 
 
-//    int4 vSumWei0, vSumWei1, vSumWei2, vSumWei3;
-//
-//    vSumWei0 = convert_int4(vload4(0, pNeiBlock)) * v256;
-//    pNeiBlock += lPitch;
-//
-//    vSumWei1 = convert_int4(vload4(0, pNeiBlock)) * v256;
-//    pNeiBlock += lPitch;
-//
-//    vSumWei2 = convert_int4(vload4(0, pNeiBlock)) * v256;
-//    pNeiBlock += lPitch;
-//
-//    vSumWei3 = convert_int4(vload4(0, pNeiBlock)) * v256;
-//    pNeiBlock += lPitch;
-//
-//    lSumWei[ 0 ] = vSumWei0.s0;
-//    lSumWei[ 1 ] = vSumWei0.s1;
-//    lSumWei[ 2 ] = vSumWei0.s2;
-//    lSumWei[ 3 ] = vSumWei0.s3;
-//
-//        lSumWei[ 4 ] = vSumWei1.s0;
-//        lSumWei[ 5 ] = vSumWei1.s1;
-//        lSumWei[ 6 ] = vSumWei1.s2;
-//        lSumWei[ 7 ] = vSumWei1.s3;
-//
-//            lSumWei[ 8 ] = vSumWei2.s0;
-//            lSumWei[ 9 ] = vSumWei2.s1;
-//            lSumWei[ 10 ] = vSumWei2.s2;
-//            lSumWei[ 11 ] = vSumWei2.s3;
-//
-//                lSumWei[ 12 ] = vSumWei3.s0;
-//                lSumWei[ 13 ] = vSumWei3.s1;
-//                lSumWei[ 14 ] = vSumWei3.s2;
-//                lSumWei[ 15 ] = vSumWei3.s3;
-//
-//
-//    lSumWei[ 16 ] += lW;
+    int lSumWei = 256;
+    int4 vSumWei[4];
+    vSumWei[0] = convert_int4(vCur[0]) << 8;
+    vSumWei[1] = convert_int4(vCur[1]) << 8;
+    vSumWei[2] = convert_int4(vCur[2]) << 8;
+    vSumWei[3] = convert_int4(vCur[3]) << 8;
 
 
 
 
     // 领域8个位置
-    AddBlockSumByNei(pCurLine, pCurLine - 1, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pCurLine + 1, lPitch, lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pCurLine - 1, lPitch, vSumWei, &lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pCurLine + 1, lPitch, vSumWei, &lSumWei, pMap);
 
-    AddBlockSumByNei(pCurLine, pPreLine - 1, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pPreLine, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pPreLine + 1, lPitch, lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pPreLine - 1, lPitch, vSumWei, &lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pPreLine, lPitch, vSumWei, &lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pPreLine + 1, lPitch, vSumWei, &lSumWei, pMap);
 
-    AddBlockSumByNei(pCurLine, pNexLine - 1, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pNexLine, lPitch, lSumWei, pMap);
-    AddBlockSumByNei(pCurLine, pNexLine + 1, lPitch, lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pNexLine - 1, lPitch, vSumWei, &lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pNexLine, lPitch, vSumWei, &lSumWei, pMap);
+    AddBlockSumByNei4(vCur, pNexLine + 1, lPitch, vSumWei, &lSumWei, pMap);
+
+
 
     // average / sweight
-    GetBlockResult(pCurLine, pDstLine, lPitch, lSumWei, pInvMap);
+//    GetBlockResult(pCurLine, pDstLine, lPitch, lSumWei, pInvMap);
+
+    int lSW = lSumWei;
+    int lInvW = pInvMap[ lSW ];
+    int4 vInvW = {lInvW, lInvW, lInvW, lInvW};
+
+    int4 out;
+    uchar4 out_char4;
+    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
+    out_char4 = convert_uchar4(out);
+    vstore4(out_char4, 0, pDstLine);
+    pDstLine += lPitch;
+
+    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
+    out_char4 = convert_uchar4(out);
+    vstore4(out_char4, 0, pDstLine);
+    pDstLine += lPitch;
+
+    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
+    out_char4 = convert_uchar4(out);
+    vstore4(out_char4, 0, pDstLine);
+    pDstLine += lPitch;
+
+    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
+    out_char4 = convert_uchar4(out);
+    vstore4(out_char4, 0, pDstLine);
+    pDstLine += lPitch;
 
 
+//    int4 out;
+//    uchar4 out_char4;
+//    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
+//    out = out - convert_int4(vCur[0]) + v128;
+//    out = clamp(out, vValue0, v256);
+//    vstore4(convert_uchar4(out), 0, pDstLine);
+//    pDstLine += lPitch;
+//
+//    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
+//    out = out - convert_int4(vCur[1]) + v128;
+//    out = clamp(out, vValue0, v256);
+//    vstore4(convert_uchar4(out), 0, pDstLine);
+//    pDstLine += lPitch;
+//
+//    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
+//    out = out - convert_int4(vCur[2]) + v128;
+//    out = clamp(out, vValue0, v256);
+//    vstore4(convert_uchar4(out), 0, pDstLine);
+//    pDstLine += lPitch;
+//
+//    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
+//    out = out - convert_int4(vCur[3]) + v128;
+//    out = clamp(out, vValue0, v256);
+//    vstore4(convert_uchar4(out), 0, pDstLine);
+//    pDstLine += lPitch;
 }
+
+
 
 // 单行降噪
 inline void ProcessLinesBroundMain(const global uchar *pCurLine,

@@ -58,6 +58,30 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
     BasicTimer timer;
     MInt32 lRet = 0;
 
+
+    {
+        /// 在安卓上，这段代码必须得还在这里, cl 粪转库才能打印 log, 原因未知
+        // init env
+        if( g_is_initialized )
+        {
+            LOG(WARNING) << "MFSR is already initilized and don't initilize it twice.";
+            return MERR_INVALID_PARAM;
+        }
+
+        bool bRet = initializeOCL(g_ocl_initializer);
+
+        if( !bRet )  // ocl initializing must be ahead of every
+        {
+            return MERR_INVALID_PARAM;
+        }
+
+        g_is_initialized = true;
+
+        LOGI(gVersionString);
+    }
+
+
+
     // new memory
     acv::Mat y_mat(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[ 0 ],
                    pSrc->pi32Pitch[ 0 ]); // set pointer to a Mat
@@ -100,6 +124,18 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
     lRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
     timer.PrintTime("main copy 2");
 
+
+
+    {
+        if( !g_is_initialized )
+        {
+            LOG(ERROR) << "mfsr is not initilized before calling EX_Uninit or It is already uninitialized.";
+            return -1;
+        }
+
+        g_ocl_initializer.unInit(); // uninitializtion for ocl should be the most tail of the library
+        g_is_initialized = false;
+    }
     LOGD("PyramidNLM_OCL_Handle--");
     return lRet - 1;
 }

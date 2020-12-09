@@ -23,7 +23,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         static MVoid MakeWeightMap(MInt32 *pTable, MFloat fVar, MInt32 lMaxNum)
         {
-
+            // lMaxNum = 16 * 50
             MInt32 SumVar = fVar * 2 * 16 * 16;
             pTable[ 0 ] = 256; 
             for(MInt32 x = 1; x < lMaxNum; x++)
@@ -242,7 +242,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 bRet &= PyramidUp(m_DenoiseImg[i], m_DenoiseImg[i - 1]); timer.PrintTime("3");
                 bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]); timer.PrintTime("4");
             }
-            timer.PrintTime("py 4 run");
+            timer.PrintTime("py 4 run ****************************");
 
 
 

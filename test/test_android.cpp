@@ -130,13 +130,13 @@ int main()
         MFloat fNoiseVarUV = 20;
 
         BasicTimer timer;
-        PyramidNLM_OCL_Init();
+        //PyramidNLM_OCL_Init();
         timer.PrintTime("====================================== handle init");
 
         lret = PyramidNLM_OCL_Handle(&guided, &guided, fNoiseVarY, fNoiseVarUV);
         timer.PrintTime("====================================== <<<<  handle run ");
 
-        PyramidNLM_OCL_Uninit();
+        //PyramidNLM_OCL_Uninit();
         timer.PrintTime("====================================== handle uninit");
     }
 
