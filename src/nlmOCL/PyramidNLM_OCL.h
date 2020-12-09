@@ -31,6 +31,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool MergeNV21Channel(CLMat& u, CLMat& v, CLMat &uv);
             bool ImageSubImage(CLMat& srcDst, CLMat& src);
             bool ImageAddImage(CLMat& srcDst, CLMat& src);
+            bool CopyAndPaddingImage(CLMat &src, CLMat& dst, int lExpandSize);
+            bool CopyAndDePaddingImage(CLMat &src, CLMat& dst, int lExpandSize);
 
         private:
             CLKernel& getKernelOfResize(int n);
@@ -41,6 +43,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLKernel& getKernelOfNLMDenoise(int n);
             CLKernel& getKernelOfPyramidDown(int n);
             CLKernel& getKernelOfPyramidUp(int n);
+            CLKernel& getKernelOfCopyAndPaddingImage(int n);
+            CLKernel& getKernelOfCopyAndDePaddingImage(int n);
 
         private:
             CLProgram m_Program;
