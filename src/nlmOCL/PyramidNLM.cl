@@ -255,7 +255,7 @@ kernel void CopyAndPaddingImage(global uchar *src_ptr,
 }
 
 
-kernel void CopyAndDePaddingImage(global uchar *src_ptr,
+kernel void CopyAndDePaddingImage(const global uchar *src_ptr,
                                 const int src_step,
                                 const int src_cols,
                                 const int src_rows,
@@ -265,12 +265,24 @@ kernel void CopyAndDePaddingImage(global uchar *src_ptr,
                                 const int dst_rows,
                                 const int lExpandSize)
 {
-	const int x = get_global_id(0)*2;
+	const int x = get_global_id(0)*8;
 	const int y = get_global_id(1);
 
     global uchar *pSrc = src_ptr + mad24(src_step, (y + lExpandSize), x + lExpandSize);
     global uchar *pDst = dst_ptr + mad24(dst_step, y, x);
-    vstore2(vload2(0, pSrc), 0, pDst);
+    if (dst_cols - x < 8)
+    {
+        int diff = dst_cols -x;
+        for (int i = 0; i < diff; i++)
+        {
+            pDst[i] = pSrc[i];
+        }
+    }
+    else
+    {
+        vstore8(vload8(0, pSrc), 0, pDst);
+    }
+    
 
 	//dst_ptr[mad24(dst_step, y, x)] = src_ptr[mad24(src_step, (y + lExpandSize), x + lExpandSize)];
 
@@ -347,7 +359,7 @@ kernel void ImageSubImage
 	int src_step,
 	int src_cols,
 	int src_rows,
-	global uchar *src, 
+	const global uchar *src, 
 	int dst_step,
 	int dst_cols,
 	int dst_rows
@@ -361,14 +373,30 @@ kernel void ImageSubImage
     global uchar * pSrcDst = srcDst + mad24(y, src_step, x);
     global uchar * pSrc = src + mad24(y, dst_step, x);
 
-    if (x >=0 && x < dst_cols && y >=0 && y < dst_rows)
+    if (dst_cols -x < 4)
     {
-    short4 srcDstVal = convert_short4(vload4(0, pSrcDst));
-    short4 srcVal = convert_short4(vload4(0, pSrc));
-    srcDstVal = srcDstVal + (short4)(128) - srcVal;
-    srcDstVal = clamp(srcDstVal, 0, 255);
-    vstore4(convert_uchar4(srcDstVal), 0, pSrcDst);
+        int diff = dst_cols -x;
+        for (int i = 0; i < diff; i++)
+        {
+            short srcDstVal = pSrcDst[i];
+	        short srcVal = pSrc[i];
+	        srcDstVal = srcDstVal - srcVal + 128;
+	        srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
+	        srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
+	        srcDst[y*src_step + x + i] = srcDstVal;
+        }
+    
     }
+    else
+    {
+        short4 srcDstVal = convert_short4(vload4(0, pSrcDst));
+        short4 srcVal = convert_short4(vload4(0, pSrc));
+        srcDstVal = srcDstVal + (short4)(128) - srcVal;
+        srcDstVal = clamp(srcDstVal, 0, 255);
+        vstore4(convert_uchar4(srcDstVal), 0, pSrcDst);
+    }
+
+    
 #else
     int x = get_global_id(0);
 	int y = get_global_id(1);
