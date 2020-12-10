@@ -662,29 +662,24 @@ kernel void NLMDenoise
 	const global int *pMap
 )
 {
-    //获取当前图像行和列
+#if 0 //并行加速
+
+#else
     int x = get_global_id(0)*4 + 1;
 	int y = get_global_id(1)*4 + 1;
 	
-    if (x >=0 && x < src_cols - 4)
-    {
-        const global uchar *pCurLine = pSrc + src_step * y + x;
-        const global uchar *pPreLine = pCurLine - src_step;
-        const global uchar *pNexLine = pCurLine + src_step;
-        global uchar *pDstLine = pDst + dst_step * y + x;
+    const global uchar *pCurLine = pSrc + src_step * y + x;
+    const global uchar *pPreLine = pCurLine - src_step;
+    const global uchar *pNexLine = pCurLine + src_step;
+    global uchar *pDstLine = pDst + dst_step * y + x;
 
-        #if 0 //并行加速
-
-
-        
-        #else
-        ProcessBlock4x4(pCurLine,
-                        pPreLine,
-                        pNexLine,
-                        pDstLine,
-                        pMap,
-                        src_step
-                        );
-        #endif
-    }
+    ProcessBlock4x4(pCurLine,
+                    pPreLine,
+                    pNexLine,
+                    pDstLine,
+                    pMap,
+                    src_step
+                    );
+#endif
+    
 }
