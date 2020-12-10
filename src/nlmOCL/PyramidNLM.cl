@@ -353,19 +353,22 @@ kernel void ImageSubImage
 	int dst_rows
 )
 {
-#if 0
-   	int x = get_global_id(0)*8;
+#if 1
+   	int x = get_global_id(0)*4;
 	int y = get_global_id(1);
 
 
     global uchar * pSrcDst = srcDst + mad24(y, src_step, x);
     global uchar * pSrc = src + mad24(y, dst_step, x);
 
-    int8 srcDstVal = convert_int8(vload8(0, pSrcDst));
-    int8 srcVal = convert_int8(vload8(0, pSrc));
-    srcDstVal = srcDstVal - srcVal + (int8)(128);
+    if (x >=0 && x < dst_cols && y >=0 && y < dst_rows)
+    {
+    short4 srcDstVal = convert_short4(vload4(0, pSrcDst));
+    short4 srcVal = convert_short4(vload4(0, pSrc));
+    srcDstVal = srcDstVal + (short4)(128) - srcVal;
     srcDstVal = clamp(srcDstVal, 0, 255);
-    vstore8(convert_uchar8(srcDstVal), 0, pSrcDst);
+    vstore4(convert_uchar4(srcDstVal), 0, pSrcDst);
+    }
 #else
     int x = get_global_id(0);
 	int y = get_global_id(1);
@@ -392,7 +395,7 @@ kernel void ImageAddImage
 	int dst_rows
 )
 {
-#if 0
+#if 1
     int x = get_global_id(0)*8;
 	int y = get_global_id(1);
 

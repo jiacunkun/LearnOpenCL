@@ -479,7 +479,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             CLKernel& kernel = getKernelOfImageSubImage(0);
             kernel.Args(srcDst, src_step, src_cols, src_rows, src, dst_step, dst_cols, dst_rows); // set argument
-            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            size_t global_size[] = { (size_t)(dst_cols+3>>2), (size_t)(dst_rows) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
@@ -508,7 +508,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             CLKernel& kernel = getKernelOfImageAddImage(0);
             kernel.Args(srcDst, src_step, src_cols, src_rows, src, dst_step, dst_cols, dst_rows); // set argument
-            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            size_t global_size[] = { (size_t)(dst_cols + 7 >> 3), (size_t)(dst_rows) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
