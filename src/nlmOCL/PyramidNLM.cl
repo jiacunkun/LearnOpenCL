@@ -570,7 +570,7 @@ inline void AddBlockSumByNei
     const global uchar *pNeiBlock,
     int lPitch,
     int *lSumWei,
-    const global int *pMap
+    constant int *pMap
  )
 {
     int lBDif = GetBlockDiff(pCurBlock, pNeiBlock, lPitch); // 计算块匹配值d,
@@ -622,7 +622,7 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
                             const global uchar *pPreLine,
                             const global uchar *pNexLine,
                             global uchar *pDstLine,
-                            const global int *pMap,
+                            constant int *pMap,
                             int lPitch
                             )
 {
@@ -648,7 +648,7 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
     GetBlockResult(pDstLine, lPitch, lSumWei);
 }
 
-
+#if 0
 kernel void NLMDenoise
 (
 	const global uchar *pSrc,
@@ -659,19 +659,21 @@ kernel void NLMDenoise
 	int dst_step,
 	int dst_cols,
 	int dst_rows,
-	const global int *pMap
+	constant int *pMap
 )
 {
 #if 0 //并行加速
+    
+   
 
 #else
     int x = get_global_id(0)*4 + 1;
 	int y = get_global_id(1)*4 + 1;
 	
-    const global uchar *pCurLine = pSrc + src_step * y + x;
+    const global uchar *pCurLine = pSrc + mad24(y, src_step, x);
     const global uchar *pPreLine = pCurLine - src_step;
     const global uchar *pNexLine = pCurLine + src_step;
-    global uchar *pDstLine = pDst + dst_step * y + x;
+    global uchar *pDstLine = pDst + mad24(y, dst_step, x);
 
     ProcessBlock4x4(pCurLine,
                     pPreLine,
@@ -683,3 +685,153 @@ kernel void NLMDenoise
 #endif
     
 }
+
+#else
+
+inline int Block_WeiCom(short4 curr0, short4 curr1, short4 curr2, short4 curr3,
+		short4 cent0, short4 cent1, short4 cent2, short4 cent3, constant int* pMap)
+	{
+		ushort4 ldif;
+		ushort4 sumdif = (ushort4)(0,0,0,0);
+		int lBDif = 0;
+
+		ldif = abs_diff(curr0, cent0);
+		ldif = min(ldif, 49);
+		sumdif = sumdif + ldif;
+		ldif = abs_diff(curr1, cent1);
+		ldif = min(ldif, 49);
+		sumdif = sumdif + ldif;
+		ldif = abs_diff(curr2, cent2);
+		ldif = min(ldif, 49);
+		sumdif = sumdif + ldif;
+		ldif = abs_diff(curr3, cent3);
+		ldif = min(ldif, 49);
+		sumdif = sumdif + ldif;
+		lBDif = sumdif.s0 + sumdif.s1 + sumdif.s2 + sumdif.s3;
+		lBDif = min(799, lBDif);		
+		return pMap[lBDif];
+	}
+
+
+
+	inline void  Block_WeiAdd(int4* WeiSum0, int4* WeiSum1, int4* WeiSum2, int4* WeiSum3,
+		short4 data0, short4 data1, short4 data2, short4 data3, int wei)
+	{
+		WeiSum0[0] = WeiSum0[0] + convert_int4(data0) * wei;
+		WeiSum1[0] = WeiSum1[0] + convert_int4(data1) * wei;
+		WeiSum2[0] = WeiSum2[0] + convert_int4(data2) * wei;
+		WeiSum3[0] = WeiSum3[0] + convert_int4(data3) * wei;
+		return;
+	}
+
+
+	//pSrc 和 //pDst 外面都有一圈padding
+	//上下左右都padding 4， 为了数据对齐
+	//领域块处理顺序
+	//1 4 6
+	//2 0 7
+	//3 5 8
+	kernel void NLMDenoise
+	(
+		const global uchar* pSrc,
+		int src_step,
+		int src_cols,
+		int src_rows,
+		global uchar* pDst,
+		int dst_step,
+		int dst_cols,
+		int dst_rows,
+		constant int* pMap
+	)
+	{
+		//获取当前图像行和列
+		int x = get_global_id(0) * 4 + 1;
+		int y = get_global_id(1) * 4 + 1;
+		if (x < src_cols && y < src_rows)
+		{
+			const global uchar* pTmpSrc = pSrc + (y - 1) * src_step + (x - 1);
+			global uchar* pTmpDst = pDst + y * dst_step + x;
+			short8 Data0 = convert_short8(vload8(0, pTmpSrc));
+			short8 Data1 = convert_short8(vload8(0, pTmpSrc + src_step));
+			short8 Data2 = convert_short8(vload8(0, pTmpSrc + src_step * 2));
+			short8 Data3 = convert_short8(vload8(0, pTmpSrc + src_step * 3));
+			short8 Data4 = convert_short8(vload8(0, pTmpSrc + src_step * 4));
+			short8 Data5 = convert_short8(vload8(0, pTmpSrc + src_step * 5));
+			uint4  mask = (uint4)(1, 2, 3, 4);
+			short4 cent0 = Data1.s1234;
+			short4 cent1 = Data2.s1234;
+			short4 cent2 = Data3.s1234;
+			short4 cent3 = Data4.s1234;
+			short4 curr0, curr1, curr2, curr3;
+			int4 WeiSum0 = (int4)(0, 0, 0, 0);
+			int4 WeiSum1 = (int4)(0, 0, 0, 0);
+			int4 WeiSum2 = (int4)(0, 0, 0, 0);
+			int4 WeiSum3 = (int4)(0, 0, 0, 0);
+			int  SumWei = 0;
+			int  lWei = 0;
+
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, cent0, cent1, cent2, cent3, 256);
+			SumWei = SumWei + 256;
+
+			mask = (uint4)(0, 1, 2, 3);
+			curr0 = Data0.s0123;
+			curr1 = Data1.s0123;
+			curr2 = Data2.s0123;
+			curr3 = Data3.s0123;
+			lWei = Block_WeiCom(curr0, curr1, curr2, curr3, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, curr0, curr1, curr2, curr3, lWei);
+			SumWei = SumWei + lWei;
+
+			curr0 = Data4.s0123;
+			lWei = Block_WeiCom( curr1, curr2, curr3,curr0, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, curr1, curr2, curr3, curr0, lWei);
+			SumWei = SumWei + lWei;
+
+			curr1 = Data5.s0123;
+			lWei = Block_WeiCom( curr2, curr3, curr0,curr1, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3,  curr2, curr3, curr0, curr1, lWei);
+			SumWei = SumWei + lWei;
+
+			mask = (uint4)(1, 2, 3, 4);
+			curr0 = Data0.s1234;
+			lWei = Block_WeiCom(curr0, cent0, cent1, cent2, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, curr0, cent0, cent1, cent2, lWei);
+			SumWei = SumWei + lWei;
+
+			curr0 = Data5.s1234;
+			lWei = Block_WeiCom(cent1, cent2, cent3, curr0, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, cent1, cent2, cent3, curr0, lWei);
+			SumWei = SumWei + lWei;
+
+
+			mask = (uint4)(2, 3, 4, 5);
+			curr0 = Data0.s2345;
+			curr1 = Data1.s2345;
+			curr2 = Data2.s2345;
+			curr3 = Data3.s2345;
+			lWei = Block_WeiCom(curr0, curr1, curr2, curr3, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, curr0, curr1, curr2, curr3, lWei);
+			SumWei = SumWei + lWei;
+
+			curr0 = Data4.s2345;
+			lWei = Block_WeiCom(curr1, curr2, curr3, curr0, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, curr1, curr2, curr3, curr0, lWei);
+			SumWei = SumWei + lWei;
+
+			curr1 = Data5.s2345;
+			lWei = Block_WeiCom(curr2, curr3, curr0, curr1, cent0, cent1, cent2, cent3, pMap);
+			Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, curr2, curr3, curr0, curr1, lWei);
+			SumWei = SumWei + lWei;
+
+			//计算结果
+			vstore4(convert_uchar4((WeiSum0 + (SumWei >> 1)) / SumWei), 0, pTmpDst);
+			vstore4(convert_uchar4((WeiSum1 + (SumWei >> 1)) / SumWei), 0, pTmpDst + dst_step);
+			vstore4(convert_uchar4((WeiSum2 + (SumWei >> 1)) / SumWei), 0, pTmpDst + dst_step * 2);
+			vstore4(convert_uchar4((WeiSum3 + (SumWei >> 1)) / SumWei), 0, pTmpDst + dst_step * 3);
+		}
+		return;
+	}
+
+
+
+#endif
