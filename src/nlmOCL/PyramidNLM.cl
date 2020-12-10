@@ -48,6 +48,36 @@ kernel void PyramidDown
 	int Dst_Height
 )
 {
+#if 0
+   int idx = get_global_id(0);//dst_width
+	int idy = get_global_id(1);
+
+	int idx_x2 = idx << 1;
+	int idy_x2 = idy << 1;
+
+	int y_pre = max(0,idy_x2-1);//(idy_x2 - 1) < 0 ? 0 : (idy_x2 - 1);
+	int y_cur = idy_x2;
+	int y_next = min(idy_x2+1,Src_Height-1);//(idy_x2 + 1) > (Src_Height - 1) ? (Src_Height - 1) : (idy_x2 + 1);
+
+	int x_pre = max(0,idx_x2-1);//(idx_x2 - 1) < 0 ? 0 : (idx_x2 - 1);
+	int x_cur = idx_x2;
+	int x_next = min(idx_x2+1,Src_Width-1);//(idx_x2 + 1) > (Src_Width - 1) ? 
+
+    global uchar* src0 = (pSrc + x_pre + y_pre * Src_Pitch);
+	global uchar* src1 = (pSrc + x_pre + y_cur * Src_Pitch);
+	global uchar* src2 = (pSrc + x_pre + y_next * Src_Pitch);
+
+    short8 pre = convert_short8(vload8(0, pSrcPre));
+    short8 cur = convert_short8(vload8(0, pSrcCur));
+    short8 nex = convert_short8(vload8(0, pSrcnex));
+
+    short8 sum_ver = pre + cur * 2 + nex;
+
+
+    global uchar * pDst = pDst + mad24(y, dst_step, x);
+
+
+#else
 	int idx = get_global_id(0);//dst_width
 	int idy = get_global_id(1);
 
@@ -74,21 +104,62 @@ kernel void PyramidDown
     int3 c = c0 + c1*2 + c2;
     int out = c.s0 + (c.s1 << 1) + c.s2;
 
-	//int r0 = GAUSS_121(src0[x_pre], src0[x_cur], src0[x_next]);
-	//int r1 = GAUSS_121(src1[x_pre], src1[x_cur], src1[x_next]);
-	//int r2 = GAUSS_121(src2[x_pre], src2[x_cur], src2[x_next]);
-	//int out = GAUSS_121(r0, r1, r2);
-
 	out = (out + 8) >> 4;
 	out = min(255, out);
 
 	dst[idx] = out;
-
+#endif
 	return;
 }
 
 
 /*BilinearResize_kernel*/
+// kernel void PyramidUp(global uchar *src_ptr,
+//                            const int src_step,
+//                            const int src_cols,
+//                            const int src_rows,
+//                            global uchar *dst_ptr,
+//                            const int dst_step,
+//                            const int dst_cols,
+//                            const int dst_rows)
+// {
+// 	const int x = get_global_id(0);
+// 	const int y = get_global_id(1);
+
+// 	float hor_scale = (float)src_cols / (float)dst_cols;
+// 	float ver_scale = (float)src_rows / (float)dst_rows;
+
+// 	float pos = ((float)x + 1.0f) * hor_scale; // 修改此处控制图像偏移
+// 	int left_pos = (int)fmax(pos - 0.5f, 0.0f);
+// 	int right_pos = (int)fmin(pos + 0.5f, (float)src_cols - 1.0f);
+// 	float hor_weight = fabs(pos - 0.5f - (float)left_pos);
+
+// 	pos = ((float)y + 1.0f) * ver_scale; // 修改此处控制图像偏移
+// 	int top_pos = (int)fmax(pos - 0.5f, 0.0f);
+// 	int bottom_pos = (int)fmin(pos + 0.5f, (float)src_rows - 1.0f);
+// 	float ver_weight = fabs(pos - 0.5f - (float)top_pos);
+
+// 	float data00 = (float)src_ptr[mad24(src_step, top_pos, left_pos)];
+// 	float data01 = (float)src_ptr[mad24(src_step, top_pos, right_pos)];
+// 	float data10 = (float)src_ptr[mad24(src_step, bottom_pos, left_pos)];
+// 	float data11 = (float)src_ptr[mad24(src_step, bottom_pos, right_pos)];
+
+// 	float tmp0 = data00 + (data01 - data00) * hor_weight;
+// 	float tmp1 = data10 + (data11 - data10) * hor_weight;
+// 	float res = tmp0 + (tmp1 - tmp0) * ver_weight + 0.5;
+// 	dst_ptr[mad24(dst_step, y, x)] = (unsigned char)clamp(res, 0.0f, 255.0f);
+
+// 	return;
+// }
+
+
+// 将上采样和加法一起做
+#define SetOut(secDst, src) \
+    out = secDst; \
+    out = out + (int)(src) - 128; \
+    out = clamp(out, 0, 255);\
+    secDst = out;
+
 kernel void PyramidUp(global uchar *src_ptr,
                            const int src_step,
                            const int src_cols,
@@ -98,34 +169,37 @@ kernel void PyramidUp(global uchar *src_ptr,
                            const int dst_cols,
                            const int dst_rows)
 {
-	const int x = get_global_id(0);
-	const int y = get_global_id(1);
+	const int src_x = get_global_id(0);
+	const int src_y = get_global_id(1);
 
-	float hor_scale = (float)src_cols / (float)dst_cols;
-	float ver_scale = (float)src_rows / (float)dst_rows;
+	int dst_x = src_x << 1;
+	int dst_y = src_y << 1;
 
-	float pos = ((float)x + 1.0f) * hor_scale; // 修改此处控制图像偏移
-	int left_pos = (int)fmax(pos - 0.5f, 0.0f);
-	int right_pos = (int)fmin(pos + 0.5f, (float)src_cols - 1.0f);
-	float hor_weight = fabs(pos - 0.5f - (float)left_pos);
 
-	pos = ((float)y + 1.0f) * ver_scale; // 修改此处控制图像偏移
-	int top_pos = (int)fmax(pos - 0.5f, 0.0f);
-	int bottom_pos = (int)fmin(pos + 0.5f, (float)src_rows - 1.0f);
-	float ver_weight = fabs(pos - 0.5f - (float)top_pos);
+	__global uchar* pSrc0 = src_ptr + src_step * src_y;
+	__global uchar* pSrc1 = src_ptr + src_step * min(src_y + 1, src_rows - 1);
+    int src_index = min(src_x + 1, src_cols - 1);
+	uchar data00 = pSrc0[src_x];
+	uchar data01 = pSrc0[src_index];
+	uchar data10 = pSrc1[src_x];
+	uchar data11 = pSrc1[src_index];
 
-	float data00 = (float)src_ptr[mad24(src_step, top_pos, left_pos)];
-	float data01 = (float)src_ptr[mad24(src_step, top_pos, right_pos)];
-	float data10 = (float)src_ptr[mad24(src_step, bottom_pos, left_pos)];
-	float data11 = (float)src_ptr[mad24(src_step, bottom_pos, right_pos)];
 
-	float tmp0 = data00 + (data01 - data00) * hor_weight;
-	float tmp1 = data10 + (data11 - data10) * hor_weight;
-	float res = tmp0 + (tmp1 - tmp0) * ver_weight + 0.5;
-	dst_ptr[mad24(dst_step, y, x)] = (unsigned char)clamp(res, 0.0f, 255.0f);
+	uchar out00 = data00;
+	uchar out01 = ((ushort)data00 + data01 + 1) >> 1;
+	uchar out10 = ((ushort)data00 + data10 + 1) >> 1;
+	uchar out11 = ((ushort)data01 + data11 + 1) >> 1;
 
-	return;
+
+    __global uchar* pOut0 = dst_ptr + dst_step * dst_y;
+    __global uchar* pOut1 = dst_ptr + dst_step * (dst_y + 1);
+    int out;
+    SetOut(pOut0[dst_x],     out00)
+    SetOut(pOut0[dst_x + 1], out01)
+    SetOut(pOut1[dst_x],     out10)
+    SetOut(pOut1[dst_x + 1], out11)
 }
+
 
 __kernel void MeanDown2x2_u8(
 __global uchar* pSrc,

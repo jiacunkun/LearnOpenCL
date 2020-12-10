@@ -146,7 +146,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 		void PyramidNLM_OCL::initBuffer(int nWidth, int nHeight, int nStep, int nLayer)
 		{
 
-			
+
 		}
 
         bool PyramidNLM_OCL::runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
@@ -156,7 +156,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLMat u, v;
             u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
             v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
-            
+
 
             bRet &= SplitNV21Channel(srcUV, u, v);
 
@@ -191,9 +191,9 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 4; //layer of pyramid
+            int nLayer = 3; //layer of pyramid
 
-            // init map 
+            // init map
             //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
             //{
             //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
@@ -235,8 +235,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
                 bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
                 bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]);
-                bRet &= PyramidUp(m_DenoiseImg[i], m_DenoiseImg[i - 1]);
-                bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
+                bRet &= PyramidUp(m_DenoiseImg[i], m_PyrDownImg[i - 1]);
+                //bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
             }
 
             // special handle for 0 layer
@@ -368,7 +368,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             CLKernel& kernel = getKernelOfPyramidUp(0);
             kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows); // set argument
-            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            size_t global_size[] = { (size_t)(dst_cols+1>>1), (size_t)(dst_rows+1>>1) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
@@ -379,10 +379,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 #endif
 
-            //Mat tmpsrc = src.map();
-            //Mat tmpdst = dst.map();
-            //src.unmap();
-            //dst.unmap();
+            Mat tmpsrc = src.map();
+            Mat tmpdst = dst.map();
+            src.unmap();
+            dst.unmap();
 #if CALCULATE_TIME
             LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif
