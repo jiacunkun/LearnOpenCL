@@ -243,13 +243,33 @@ kernel void CopyAndPaddingImage(global uchar *src_ptr,
                                 const int dst_rows,
                                 const int lExpandSize)
 {
-	int x = get_global_id(0);
+	int x = get_global_id(0)*4;
 	int y = get_global_id(1);
 
     int idx = min(max(x - lExpandSize, 0), src_cols - 1);
     int idy = min(max(y - lExpandSize, 0), src_rows - 1);
 
-    dst_ptr[mad24(dst_step, y, x)] = src_ptr[mad24(src_step, idy, idx)];
+    const global uchar *pSrc = src_ptr + mad24(src_step, idy, idx);
+    global uchar *pDst = dst_ptr + mad24(dst_step, y, x);
+
+    //dst_ptr[mad24(dst_step, y, x)] = src_ptr[mad24(src_step, idy, idx)];
+
+    if (dst_cols - x < 5)
+    {
+        int diff = dst_cols -x;
+        for (int i = 0; i < diff; i++)
+        {
+            pDst[i] = pSrc[0];
+        }
+    }
+    else if (x == 0)
+    {
+        vstore4((uchar4)(pSrc[0]), 0, pDst);
+    }
+    else
+    {
+        vstore4(vload4(0, pSrc), 0, pDst);
+    }
 
 	return;
 }
@@ -265,10 +285,10 @@ kernel void CopyAndDePaddingImage(const global uchar *src_ptr,
                                 const int dst_rows,
                                 const int lExpandSize)
 {
-	const int x = get_global_id(0)*8;
-	const int y = get_global_id(1);
+	int x = get_global_id(0)*8;
+	int y = get_global_id(1);
 
-    global uchar *pSrc = src_ptr + mad24(src_step, (y + lExpandSize), x + lExpandSize);
+    const global uchar *pSrc = src_ptr + mad24(src_step, (y + lExpandSize), x + lExpandSize);
     global uchar *pDst = dst_ptr + mad24(dst_step, y, x);
     if (dst_cols - x < 8)
     {
@@ -282,9 +302,6 @@ kernel void CopyAndDePaddingImage(const global uchar *src_ptr,
     {
         vstore8(vload8(0, pSrc), 0, pDst);
     }
-    
-
-	//dst_ptr[mad24(dst_step, y, x)] = src_ptr[mad24(src_step, (y + lExpandSize), x + lExpandSize)];
 
 	return;
 }
