@@ -68,75 +68,25 @@ kernel void PyramidDown
 
 	global uchar* dst = (__global uchar*)(pDst + idy * Dst_Pitch);
 
-	int r0 = GAUSS_121(src0[x_pre], src0[x_cur], src0[x_next]);
-	int r1 = GAUSS_121(src1[x_pre], src1[x_cur], src1[x_next]);
-	int r2 = GAUSS_121(src2[x_pre], src2[x_cur], src2[x_next]);
+    int3 c0 = (int3)(src0[x_pre], src1[x_pre], src2[x_pre]);
+    int3 c1 = (int3)(src0[x_cur], src1[x_cur], src2[x_cur]);
+    int3 c2 = (int3)(src0[x_next], src1[x_next], src2[x_next]);
+    int3 c = c0 + c1*2 + c2;
+    int out = c.s0 + (c.s1 << 1) + c.s2;
 
-	int out = GAUSS_121(r0, r1, r2);
-	out = (out+8)/16;
-	out = MIN(255, out);
+	//int r0 = GAUSS_121(src0[x_pre], src0[x_cur], src0[x_next]);
+	//int r1 = GAUSS_121(src1[x_pre], src1[x_cur], src1[x_next]);
+	//int r2 = GAUSS_121(src2[x_pre], src2[x_cur], src2[x_next]);
+	//int out = GAUSS_121(r0, r1, r2);
+
+	out = (out + 8) >> 4;
+	out = min(255, out);
 
 	dst[idx] = out;
 
 	return;
 }
 
-// kernel void PyramidUp
-// (
-// 	const global uchar *src_ptr,
-//     const int src_step,
-//     const int src_cols,
-//     const int src_rows,
-//     global uchar *dst_ptr,
-//     const int dst_step,
-//     const int dst_cols,
-//     const int dst_rows
-// )
-// {
-// 	int x = get_global_id(0);
-// 	int y = get_global_id(1);
-
-// 	int x_src = x >> 1;
-// 	int y_src = y >> 1;
-
-// 	if (x%2 == 0 && y%2 == 0) // 偶数行列直接赋值
-// 	{
-// 		dst_ptr[y*dst_step + x] = src_ptr[y_src*src_step + x_src];
-// 		return;
-// 	}
-	
-// 	if (x%2 == 1 && y%2 == 0)
-// 	{
-// 		int left = max(x_src - 1, 0);
-// 		int right = min(x_src + 1, src_cols - 1);
-
-// 		dst_ptr[y*dst_step + x] = (src_ptr[y_src*src_step + left] + src_ptr[y_src*src_step + right] + 1) >> 1;
-// 		return;
-// 	}
-
-// 	if (x%2 == 0 && y%2 == 1)
-// 	{
-// 		int top = max(y_src - 1, 0);
-// 		int bottom = min(y_src + 1, dst_cols - 1);
-
-// 		dst_ptr[y*dst_step + x] = (src_ptr[top*src_step + x_src] + src_ptr[bottom*src_step + x_src] + 1) >> 1;
-// 		return;
-// 	}
-
-// 	if (x%2 == 1 && y%2 == 1)
-// 	{
-// 		int top = max(y_src - 1, 0);
-// 		int bottom = min(y_src + 1, dst_cols - 1);
-// 		int left = max(x_src - 1, 0);
-// 		int right = min(x_src + 1, src_cols - 1);
-
-
-// 		dst_ptr[y*dst_step + x] = (src_ptr[top*src_step + left] + src_ptr[bottom*src_step + right] + src_ptr[top*src_step + right] + src_ptr[bottom*src_step + left] + 2) >> 2;
-// 		return;
-// 	}
-
-// 	return;
-// }
 
 /*BilinearResize_kernel*/
 kernel void PyramidUp(global uchar *src_ptr,
@@ -277,10 +227,10 @@ kernel void MakeWeightMap
     int x = get_global_id(0);
 	int y = get_global_id(1);
 
-    float SumVar = fVar * 2 * 16 * 16;
+    float SumVar = fVar * 512;
     int lVal = x * x; 
     lVal = (int) ( 255.0 * exp(-lVal / SumVar) + 0.5f );
-    pTable[ x ] = lVal;     
+    pTable[x] = lVal;
 }
 
 kernel void CopyAndPaddingImage(global uchar *src_ptr,
@@ -747,8 +697,7 @@ inline int Block_WeiCom(short4 curr0, short4 curr1, short4 curr2, short4 curr3,
 		//获取当前图像行和列
 		int x = get_global_id(0) * 4 + 1;
 		int y = get_global_id(1) * 4 + 1;
-		if (x < src_cols && y < src_rows)
-		{
+		
 			const global uchar* pTmpSrc = pSrc + (y - 1) * src_step + (x - 1);
 			global uchar* pTmpDst = pDst + y * dst_step + x;
 			short8 Data0 = convert_short8(vload8(0, pTmpSrc));
@@ -828,7 +777,7 @@ inline int Block_WeiCom(short4 curr0, short4 curr1, short4 curr2, short4 curr3,
 			vstore4(convert_uchar4((WeiSum1 + (SumWei >> 1)) / SumWei), 0, pTmpDst + dst_step);
 			vstore4(convert_uchar4((WeiSum2 + (SumWei >> 1)) / SumWei), 0, pTmpDst + dst_step * 2);
 			vstore4(convert_uchar4((WeiSum3 + (SumWei >> 1)) / SumWei), 0, pTmpDst + dst_step * 3);
-		}
+		
 		return;
 	}
 

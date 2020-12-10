@@ -218,7 +218,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 
             // build pyramid
-            src.copyTo(m_PyrDownImg[0]);
+            m_PyrDownImg[0] = src;
 
             for (int i = 0; i < nLayer - 1; i++)
             {
@@ -247,8 +247,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                     float fTmpVar = fNoiseVar * fPow[i];;
                     fTmpVar = MAX(1.0f, fTmpVar);
 
-                    bRet &= NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
-                    m_DenoiseImg[0].copyTo(dst);// copy result to output
+                    bRet &= NLMDenoise(m_PyrDownImg[i], dst, fTmpVar);
+                    //m_DenoiseImg[0].copyTo(dst);// copy result to output
                 }
                 else
                 {
@@ -399,9 +399,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #endif
             bool bRet = true;
 
-          
-            
-            MakeWeightMap(map_clmat, fNoiseVar, 16 * 50);
+            MakeWeightMap(map_clmat, fNoiseVar, 800);
 
             int src_step = src.stride(0);
             int src_cols = src.cols();
@@ -437,6 +435,11 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             bRet &= kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
+            Mat tmpsrc1 = dstPad_clmat.map();
+            Mat tmpdst1 = srcPad_clmat.map();
+            dstPad_clmat.unmap();
+            srcPad_clmat.unmap();
 
 #if CALCULATE_TIME
             LOGD("%s[%d]: NLM kernel time is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
