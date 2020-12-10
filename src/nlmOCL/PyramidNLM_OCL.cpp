@@ -233,8 +233,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 float fTmpVar = fNoiseVar * fPow[i];;
                 fTmpVar = MAX(1.0f, fTmpVar);
 
-                bRet = NLMDenoise(m_PyrDownImg[i], m_DenoiseImg[i], fTmpVar);
-                bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]);
+                bRet = NLMDenoise(m_PyrDownImg[i], m_TempImg[i], m_DenoiseImg[i], fTmpVar, 1);
+                //bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]);
                 bRet &= PyramidUp(m_DenoiseImg[i], m_PyrDownImg[i - 1]);
                 //bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
             }
@@ -247,7 +247,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                     float fTmpVar = fNoiseVar * fPow[i];;
                     fTmpVar = MAX(1.0f, fTmpVar);
 
-                    bRet &= NLMDenoise(m_PyrDownImg[i], dst, fTmpVar);
+                    bRet &= NLMDenoise(m_PyrDownImg[i], m_PyrDownImg[i], dst, fTmpVar, 0);
                     //m_DenoiseImg[0].copyTo(dst);// copy result to output
                 }
                 else
@@ -390,7 +390,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return bRet;
         }
 
-        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar)
+        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& srcSub, CLMat& dst, float fNoiseVar, bool isSubImage)
         {
             LOGD("NLMDenoise++");
 #if CALCULATE_TIME
@@ -446,7 +446,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 #endif
 
 #if 1
-            bRet &= CopyAndDePaddingImage(dstPad_clmat, dst, lExpandSize);
+            bRet &= CopyAndDePaddingImage(dstPad_clmat, dst, srcSub, lExpandSize, isSubImage);
 
             //Mat tmpsrc1 = dstPad_clmat.map();
             //Mat tmpdst1 = dst.map();
@@ -625,7 +625,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         }
 
-        bool PyramidNLM_OCL::CopyAndDePaddingImage(CLMat &src, CLMat& dst, int lExpandSize)
+        bool PyramidNLM_OCL::CopyAndDePaddingImage(CLMat& src, CLMat& dst, CLMat& srcSub, int lExpandSize, bool isSubImage)
         {
 #if CALCULATE_TIME
             BasicTimer time;
@@ -640,7 +640,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int dst_rows = dst.rows();
 
             CLKernel& kernel = getKernelOfCopyAndDePaddingImage(0);
-            kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows, lExpandSize); // set argument
+            kernel.Args(src, src_step, src_cols, src_rows, dst, srcSub, dst_step, dst_cols, dst_rows, lExpandSize, isSubImage); // set argument
             size_t global_size[] = { (size_t)(dst_cols+7>>3), (size_t)(dst_rows) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
