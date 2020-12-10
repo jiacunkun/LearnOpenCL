@@ -62,11 +62,11 @@ kernel void PyramidDown
 	int x_cur = idx_x2;
 	int x_next = min(idx_x2+1,Src_Width-1);//(idx_x2 + 1) > (Src_Width - 1) ? (Src_Width - 1) : (idx_x2 + 1);
 
-	__global uchar* src0 = (__global uchar*)(pSrc + y_pre * Src_Pitch);
-	__global uchar* src1 = (__global uchar*)(pSrc + y_cur * Src_Pitch);
-	__global uchar* src2 = (__global uchar*)(pSrc + y_next * Src_Pitch);
+	global uchar* src0 = (pSrc + y_pre * Src_Pitch);
+	global uchar* src1 = (pSrc + y_cur * Src_Pitch);
+	global uchar* src2 = (pSrc + y_next * Src_Pitch);
 
-	__global uchar* dst = (__global uchar*)(pDst + idy * Dst_Pitch);
+	global uchar* dst = (__global uchar*)(pDst + idy * Dst_Pitch);
 
 	int r0 = GAUSS_121(src0[x_pre], src0[x_cur], src0[x_next]);
 	int r1 = GAUSS_121(src1[x_pre], src1[x_cur], src1[x_next]);
@@ -177,6 +177,40 @@ kernel void PyramidUp(global uchar *src_ptr,
 	return;
 }
 
+__kernel void MeanDown2x2_u8(
+__global uchar* pSrc,
+__global uchar* pDst,
+int Src_Width,
+int Src_Height,
+int Src_Pitch,
+int Dst_Width,
+int Dst_Height,
+int Dst_Pitch)
+{
+	int idx = get_global_id(0);
+	int idy = get_global_id(1);
+
+	int idx_x2 = idx << 1;
+	int idy_x2 = idy << 1;
+
+	int y1 = min(idy_x2 + 1, Src_Height - 1);
+
+	__global uchar* src0 = (__global uchar*)(pSrc + idy_x2*Src_Pitch);
+	__global uchar* src1 = (__global uchar*)(pSrc + y1*Src_Pitch);
+	__global uchar* dst = (__global uchar*)(pDst + idy*Dst_Pitch);
+
+	int2 in0 = convert_int2(vload2(0, src0 + idx_x2));
+	int2 in1 = convert_int2(vload2(0, src1 + idx_x2));
+
+	int sum = in0.s0 + in0.s1 + in1.s0 + in1.s1;
+	sum += 2;
+	sum >>= 2;
+
+	dst[idx] = convert_uchar(sum);
+
+	return;
+}
+
 kernel void Resize
 (
 	const global uchar *src,
@@ -262,11 +296,6 @@ kernel void CopyAndPaddingImage(global uchar *src_ptr,
 	int x = get_global_id(0);
 	int y = get_global_id(1);
 
-    if (x >= lExpandSize && x < dst_cols - lExpandSize && y >= lExpandSize && y < dst_rows - lExpandSize)
-    {
-	   
-    }
-
     int idx = min(max(x - lExpandSize, 0), src_cols - 1);
     int idy = min(max(y - lExpandSize, 0), src_rows - 1);
 
@@ -286,11 +315,14 @@ kernel void CopyAndDePaddingImage(global uchar *src_ptr,
                                 const int dst_rows,
                                 const int lExpandSize)
 {
-	const int x = get_global_id(0);
+	const int x = get_global_id(0)*2;
 	const int y = get_global_id(1);
 
+    global uchar *pSrc = src_ptr + mad24(src_step, (y + lExpandSize), x + lExpandSize);
+    global uchar *pDst = dst_ptr + mad24(dst_step, y, x);
+    vstore2(vload2(0, pSrc), 0, pDst);
 
-	dst_ptr[mad24(dst_step, y, x)] = src_ptr[mad24(src_step, (y + lExpandSize), x + lExpandSize)];
+	//dst_ptr[mad24(dst_step, y, x)] = src_ptr[mad24(src_step, (y + lExpandSize), x + lExpandSize)];
 
 	return;
 }
@@ -309,11 +341,23 @@ kernel void SplitNV21Channel
 )
 {
     //获取当前图像行和列
-    int x = get_global_id(0);
-	int y = get_global_id(1);
+    // int x = get_global_id(0);
+	// int y = get_global_id(1);
 
-	uDst[y*dst_step + x] = uvSrc[y*src_step + 2*x];
-	vDst[y*dst_step + x] = uvSrc[y*src_step + 2*x + 1];
+	// uDst[y*dst_step + x] = uvSrc[y*src_step + 2*x];
+	// vDst[y*dst_step + x] = uvSrc[y*src_step + 2*x + 1];
+
+    int row = get_global_id(1);
+	int col = get_global_id(0) * 8;
+
+    int srcCol = col * 2;
+    global uchar *pVDst = vDst + mad24(row, dst_step, col);
+    global uchar *pUDst = uDst + mad24(row, dst_step, col);
+    global const uchar *pUVSrc = uvSrc + mad24(row, src_step, srcCol);
+    uchar16 uv_val = vload16(0, pUVSrc);
+    vstore8(uv_val.s02468ace, 0, pUDst);
+    vstore8(uv_val.s13579bdf, 0, pVDst);
+    
 }
 
 
@@ -331,11 +375,19 @@ kernel void MergeNV21Channel
 )
 {
     //获取当前图像行和列
-   	int x = get_global_id(0);
-	int y = get_global_id(1);
+    int row = get_global_id(1);
+	int col = get_global_id(0) * 8;
 
-	uvDst[y*dst_step + x*2] = uSrc[y*src_step + x];
-	uvDst[y*dst_step + x*2 + 1] = vSrc[y*src_step + x];
+    int dstCol = col * 2;
+    global uchar * pUVDst = uvDst + mad24(row, dst_step, dstCol);
+    global const uchar * pVSrc = vSrc + mad24(row, src_step, col);
+    global const uchar * pUSrc = uSrc + mad24(row, src_step, col);
+    uchar8 v_val = vload8(0, pVSrc);
+    uchar8 u_val = vload8(0, pUSrc);
+    uchar16 uv_val;
+    uv_val.s02468ace = u_val;
+    uv_val.s13579bdf = v_val;
+    vstore16(uv_val, 0, pUVDst);
 }
 
 
@@ -351,9 +403,23 @@ kernel void ImageSubImage
 	int dst_rows
 )
 {
-    //获取当前图像行和列
-   	int x = get_global_id(0);
+#if 0
+   	int x = get_global_id(0)*8;
 	int y = get_global_id(1);
+
+
+    global uchar * pSrcDst = srcDst + mad24(y, src_step, x);
+    global uchar * pSrc = src + mad24(y, dst_step, x);
+
+    int8 srcDstVal = convert_int8(vload8(0, pSrcDst));
+    int8 srcVal = convert_int8(vload8(0, pSrc));
+    srcDstVal = srcDstVal - srcVal + (int8)(128);
+    srcDstVal = clamp(srcDstVal, 0, 255);
+    vstore8(convert_uchar8(srcDstVal), 0, pSrcDst);
+#else
+    int x = get_global_id(0);
+	int y = get_global_id(1);
+
 
 	int srcDstVal = srcDst[y*src_step + x];
 	int srcVal = src[y*dst_step + x];
@@ -361,6 +427,7 @@ kernel void ImageSubImage
 	srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
 	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
 	srcDst[y*src_step + x] = srcDstVal;
+#endif
 }
 
 kernel void ImageAddImage
@@ -375,7 +442,20 @@ kernel void ImageAddImage
 	int dst_rows
 )
 {
-    //获取当前图像行和列
+#if 0
+    int x = get_global_id(0)*8;
+	int y = get_global_id(1);
+
+
+    global uchar * pSrcDst = srcDst + mad24(y, src_step, x);
+    global uchar * pSrc = src + mad24(y, dst_step, x);
+
+    int8 srcDstVal = convert_int8(vload8(0, pSrcDst));
+    int8 srcVal = convert_int8(vload8(0, pSrc));
+    srcDstVal = srcDstVal + srcVal - (int8)(128);
+    srcDstVal = clamp(srcDstVal, 0, 255);
+    vstore8(convert_uchar8(srcDstVal), 0, pSrcDst);
+#else
    	int x = get_global_id(0);
 	int y = get_global_id(1);
 
@@ -385,6 +465,7 @@ kernel void ImageAddImage
 	srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
 	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
 	srcDst[y*src_step + x] = srcDstVal;
+#endif
 }
 
 
@@ -582,19 +663,20 @@ kernel void NLMDenoise
 )
 {
     //获取当前图像行和列
-    int x = get_global_id(0)*4;
+    int x = get_global_id(0)*4 + 1;
 	int y = get_global_id(1)*4 + 1;
 	
     if (x >=0 && x < src_cols - 4)
     {
-        const global uchar *pCurLine = pSrc + src_step * y + x + 1;
+        const global uchar *pCurLine = pSrc + src_step * y + x;
         const global uchar *pPreLine = pCurLine - src_step;
         const global uchar *pNexLine = pCurLine + src_step;
-        global uchar *pDstLine = pDst + dst_step * y + x + 1;
+        global uchar *pDstLine = pDst + dst_step * y + x;
 
         #if 0 //并行加速
 
 
+        
         #else
         ProcessBlock4x4(pCurLine,
                         pPreLine,
