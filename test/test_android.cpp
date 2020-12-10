@@ -180,11 +180,11 @@ int main()
 
             int max = 0;
             int count = 0;
-            for(int i = 0; i < h; ++i)
+            for(int i = 100; i < h - 100; ++i)
             {
                 unsigned char* p1 = RGBImg.data + i * w * 4;
                 unsigned char* p2 = out_org.data + i * w * 4;
-                for(int j = 0; j < w * 4; ++j)
+                for(int j = 100; j < w * 4 - 400; ++j)
                 {
                     int diff = abs(p1[j] - p2[j]);
                     max = std::max(max, diff);

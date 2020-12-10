@@ -48,38 +48,122 @@ kernel void PyramidDown
 	int Dst_Height
 )
 {
-	int idx = get_global_id(0);//dst_width
-	int idy = get_global_id(1);
+	int dst_x = get_global_id(0);//dst_width
+	int dst_y = get_global_id(1);
 
-	int idx_x2 = idx << 1;
-	int idy_x2 = idy << 1;
+	int src_x = dst_x << 1;
+	int src_x_pre = max(0, src_x - 1);
+	int src_x_next = min(src_x + 1,Src_Width - 1);
+	int src_y = dst_y << 1;
+	int src_y_pre = max(0, src_y - 1);
+	int src_y_next = min(src_y + 1,Src_Height - 1);
 
-	int y_pre = max(0,idy_x2-1);//(idy_x2 - 1) < 0 ? 0 : (idy_x2 - 1);
-	int y_cur = idy_x2;
-	int y_next = min(idy_x2+1,Src_Height-1);//(idy_x2 + 1) > (Src_Height - 1) ? (Src_Height - 1) : (idy_x2 + 1);
 
-	int x_pre = max(0,idx_x2-1);//(idx_x2 - 1) < 0 ? 0 : (idx_x2 - 1);
-	int x_cur = idx_x2;
-	int x_next = min(idx_x2+1,Src_Width-1);//(idx_x2 + 1) > (Src_Width - 1) ? (Src_Width - 1) : (idx_x2 + 1);
+	__global uchar* src0 = (__global uchar*)(pSrc + src_y_pre * Src_Pitch);
+	__global uchar* src1 = (__global uchar*)(pSrc + src_y * Src_Pitch);
+	__global uchar* src2 = (__global uchar*)(pSrc + src_y_next * Src_Pitch);
+	__global uchar* dst = (__global uchar*)(pDst + dst_y * Dst_Pitch);
 
-	__global uchar* src0 = (__global uchar*)(pSrc + y_pre * Src_Pitch);
-	__global uchar* src1 = (__global uchar*)(pSrc + y_cur * Src_Pitch);
-	__global uchar* src2 = (__global uchar*)(pSrc + y_next * Src_Pitch);
 
-	__global uchar* dst = (__global uchar*)(pDst + idy * Dst_Pitch);
-
-	int r0 = GAUSS_121(src0[x_pre], src0[x_cur], src0[x_next]);
-	int r1 = GAUSS_121(src1[x_pre], src1[x_cur], src1[x_next]);
-	int r2 = GAUSS_121(src2[x_pre], src2[x_cur], src2[x_next]);
+	int r0 = GAUSS_121(src0[src_x_pre], src0[src_x], src0[src_x_next]);
+	int r1 = GAUSS_121(src1[src_x_pre], src1[src_x], src1[src_x_next]);
+	int r2 = GAUSS_121(src2[src_x_pre], src2[src_x], src2[src_x_next]);
 
 	int out = GAUSS_121(r0, r1, r2);
 	out = (out+8)/16;
-	out = MIN(255, out);
+	out = min(255, out);
 
-	dst[idx] = out;
+	dst[dst_x] = out;
 
 	return;
 }
+
+
+///// 会往左上角片0.5个像素值
+//constant ushort8 vValue8 = {8,8,8,8,8,8,8,8};
+//kernel void PyramidDown
+//(
+//	global uchar* pSrc,
+//	int Src_Pitch,
+//	int Src_Width,
+//	int Src_Height,
+//	global uchar* pDst,
+//	int Dst_Pitch,
+//	int Dst_Width,
+//	int Dst_Height
+//)
+//{
+//	int dst_x = get_global_id(0) * 8;//dst_width
+//	int dst_y = get_global_id(1);
+//
+//
+//	int src_y = dst_y << 1;
+//	int src_y_pre = max(0, src_y - 1);
+//	int src_y_next = min(src_y + 1, Src_Height - 1);
+//	__global uchar* pSrc0 = (__global uchar*)(pSrc + src_y_pre * Src_Pitch);
+//	__global uchar* pSrc1 = (__global uchar*)(pSrc + src_y * Src_Pitch);
+//	__global uchar* pSrc2 = (__global uchar*)(pSrc + src_y_next * Src_Pitch);
+//
+//
+//    uchar8 s0[3], s1[3], s2[3];
+//    if(dst_x == 0)
+//    {
+//        s0[1] = vload8(0, pSrc0);
+//        s1[1] = vload8(0, pSrc1);
+//        s2[1] = vload8(0, pSrc2);
+//
+//
+//        s0[0] = (uchar8)(s0[1].s0, s0[1].s0123, s0[1].s456);
+//        s1[0] = (uchar8)(s1[1].s0, s1[1].s0123, s1[1].s456);
+//        s2[0] = (uchar8)(s2[1].s0, s2[1].s0123, s2[1].s456);
+//
+//
+//        s0[2] = (uchar8)(s0[1].s1234, s0[1].s567, pSrc0[8]);
+//        s1[2] = (uchar8)(s1[1].s1234, s0[1].s567, pSrc1[8]);
+//        s2[2] = (uchar8)(s2[1].s1234, s0[1].s567, pSrc2[8]);
+//
+//    } else if(dst_x == Dst_Width - 1) {
+//
+//
+//    } else {
+//        int src_x = dst_x << 1;
+//        uchar2 tmp;
+//
+//        pSrc0 += src_x - 1;
+//        s0[0] = vload8(0, pSrc0);
+//        tmp = vload2(0, pSrc0 + 8);
+//        s0[1] = (uchar8)(s0[0].s1234, s0[0].s567, tmp.s0);
+//        s0[2] = (uchar8)(s0[0].s2345, s0[0].s67, tmp.s01);
+//
+//
+//        pSrc1 += src_x - 1;
+//        s1[0] = vload8(0, pSrc1);
+//        tmp = vload2(0, pSrc1 + 8);
+//        s1[1] = (uchar8)(s1[0].s1234, s1[0].s567, tmp.s0);
+//        s1[2] = (uchar8)(s1[0].s2345, s1[0].s67, tmp.s01);
+//
+//
+//        pSrc2 += src_x - 1;
+//        s2[0] = vload8(0, pSrc2);
+//        tmp = vload2(0, pSrc2 + 8);
+//        s2[1] = (uchar8)(s2[0].s1234, s2[0].s567, tmp.s0);
+//        s2[2] = (uchar8)(s2[0].s2345, s2[0].s67, tmp.s01);
+//    }
+//
+//
+//    ushort8 r0 = convert_ushort8(s0[0]) + (convert_ushort8(s0[1]) << 1) + convert_ushort8(s0[2]);
+//    ushort8 r1 = convert_ushort8(s1[0]) + (convert_ushort8(s1[1]) << 1) + convert_ushort8(s1[2]);
+//    ushort8 r2 = convert_ushort8(s2[0]) + (convert_ushort8(s2[1]) << 1) + convert_ushort8(s2[2]);
+//
+//    ushort8 out = r0 + (r1 << 1) + r2;
+//    out = (out + vValue8) >> 4;
+//	out = clamp(out, 0, 255);
+//
+//    __global uchar* dst = (__global uchar*)(pDst + dst_y * Dst_Pitch);
+//	vstore8(convert_uchar8(out), 0, dst + dst_x);
+//}
+
+
 
 // kernel void PyramidUp
 // (
@@ -138,44 +222,102 @@ kernel void PyramidDown
 // 	return;
 // }
 
+///*BilinearResize_kernel*/
+//kernel void PyramidUp(global uchar *src_ptr,
+//                           const int src_step,
+//                           const int src_cols,
+//                           const int src_rows,
+//                           global uchar *dst_ptr,
+//                           const int dst_step,
+//                           const int dst_cols,
+//                           const int dst_rows,
+//                           global uchar *pOut,
+//                           int out_step)
+//{
+//	const int x = get_global_id(0);
+//	const int y = get_global_id(1);
+//
+//	float hor_scale = (float)src_cols / (float)dst_cols;
+//	float ver_scale = (float)src_rows / (float)dst_rows;
+//
+//	float pos = ((float)x + 1.0f) * hor_scale; // 修改此处控制图像偏移
+//	int left_pos = (int)fmax(pos - 0.5f, 0.0f);
+//	int right_pos = (int)fmin(pos + 0.5f, (float)src_cols - 1.0f);
+//	float hor_weight = fabs(pos - 0.5f - (float)left_pos);
+//
+//	pos = ((float)y + 1.0f) * ver_scale; // 修改此处控制图像偏移
+//	int top_pos = (int)fmax(pos - 0.5f, 0.0f);
+//	int bottom_pos = (int)fmin(pos + 0.5f, (float)src_rows - 1.0f);
+//	float ver_weight = fabs(pos - 0.5f - (float)top_pos);
+//
+//	float data00 = (float)src_ptr[mad24(src_step, top_pos, left_pos)];
+//	float data01 = (float)src_ptr[mad24(src_step, top_pos, right_pos)];
+//	float data10 = (float)src_ptr[mad24(src_step, bottom_pos, left_pos)];
+//	float data11 = (float)src_ptr[mad24(src_step, bottom_pos, right_pos)];
+//
+//	float tmp0 = data00 + (data01 - data00) * hor_weight;
+//	float tmp1 = data10 + (data11 - data10) * hor_weight;
+//	float res = tmp0 + (tmp1 - tmp0) * ver_weight + 0.5;
+//	uchar dst = (unsigned char)clamp(res, 0.0f, 255.0f);
+//	int dst_index = mad24(dst_step, y, x);
+//	dst_ptr[dst_index] = dst;
+//
+//
+//
+////    dst_index = mad24(out_step, y, x);
+////    int out = pOut[dst_index];
+////    out = out + (int)(dst) - 128;
+////    out = clamp(out, 0, 255);
+////    pOut[dst_index] = out;
+//}
+
+
+#define SetOut(secDst, src) \
+    out = secDst; \
+    out = out + (int)(src) - 128; \
+    out = clamp(out, 0, 255);\
+    secDst = out;
+
 /*BilinearResize_kernel*/
 kernel void PyramidUp(global uchar *src_ptr,
                            const int src_step,
                            const int src_cols,
                            const int src_rows,
                            global uchar *dst_ptr,
-                           const int dst_step,
-                           const int dst_cols,
-                           const int dst_rows)
+                           const int dst_step)
 {
-	const int x = get_global_id(0);
-	const int y = get_global_id(1);
+	const int src_x = get_global_id(0);
+	const int src_y = get_global_id(1);
 
-	float hor_scale = (float)src_cols / (float)dst_cols;
-	float ver_scale = (float)src_rows / (float)dst_rows;
+	int dst_x = src_x << 1;
+	int dst_y = src_y << 1;
 
-	float pos = ((float)x + 1.0f) * hor_scale; // 修改此处控制图像偏移
-	int left_pos = (int)fmax(pos - 0.5f, 0.0f);
-	int right_pos = (int)fmin(pos + 0.5f, (float)src_cols - 1.0f);
-	float hor_weight = fabs(pos - 0.5f - (float)left_pos);
 
-	pos = ((float)y + 1.0f) * ver_scale; // 修改此处控制图像偏移
-	int top_pos = (int)fmax(pos - 0.5f, 0.0f);
-	int bottom_pos = (int)fmin(pos + 0.5f, (float)src_rows - 1.0f);
-	float ver_weight = fabs(pos - 0.5f - (float)top_pos);
+	__global uchar* pSrc0 = src_ptr + src_step * src_y;
+	__global uchar* pSrc1 = src_ptr + src_step * min(src_y + 1, src_rows - 1);
+    int src_index = min(src_x + 1, src_cols - 1);
+	uchar data00 = pSrc0[src_x];
+	uchar data01 = pSrc0[src_index];
+	uchar data10 = pSrc1[src_x];
+	uchar data11 = pSrc1[src_index];
 
-	float data00 = (float)src_ptr[mad24(src_step, top_pos, left_pos)];
-	float data01 = (float)src_ptr[mad24(src_step, top_pos, right_pos)];
-	float data10 = (float)src_ptr[mad24(src_step, bottom_pos, left_pos)];
-	float data11 = (float)src_ptr[mad24(src_step, bottom_pos, right_pos)];
 
-	float tmp0 = data00 + (data01 - data00) * hor_weight;
-	float tmp1 = data10 + (data11 - data10) * hor_weight;
-	float res = tmp0 + (tmp1 - tmp0) * ver_weight + 0.5;
-	dst_ptr[mad24(dst_step, y, x)] = (unsigned char)clamp(res, 0.0f, 255.0f);
+	uchar out00 = data00;
+	uchar out01 = ((ushort)data00 + data01 + 1) >> 1;
+	uchar out10 = ((ushort)data00 + data10 + 1) >> 1;
+	uchar out11 = ((ushort)data01 + data11 + 1) >> 1;
 
-	return;
+
+    __global uchar* pOut0 = dst_ptr + dst_step * dst_y;
+    __global uchar* pOut1 = dst_ptr + dst_step * (dst_y + 1);
+    int out;
+    SetOut(pOut0[dst_x],     out00)
+    SetOut(pOut0[dst_x + 1], out01)
+    SetOut(pOut1[dst_x],     out10)
+    SetOut(pOut1[dst_x + 1], out11)
 }
+
+
 
 kernel void Resize
 (
@@ -318,6 +460,7 @@ kernel void ImageAddImage
 
 	int srcDstVal = srcDst[y*src_step + x];
 	int srcVal = src[y*dst_step + x];
+
 	srcDstVal = srcDstVal + srcVal - 128;
 	srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
 	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
@@ -437,94 +580,6 @@ inline void AddBlockSumByNei
 }
 
 
-kernel void subImage
-(
-	global uchar *srcDst,
-	global uchar *src
-)
-{
-//	int srcDstVal = srcDst[0];
-//	int srcVal = src[0];
-//	srcDstVal = srcDstVal - srcVal + 128;
-//	srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
-//	srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
-//	srcDst[0] = srcDstVal;
-//
-//	srcDstVal = srcDst[1];
-//    srcVal = src[1];
-//    srcDstVal = srcDstVal - srcVal + 128;
-//    srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
-//    srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
-//    srcDst[1] = srcDstVal;
-//
-//    srcDstVal = srcDst[2];
-//    srcVal = src[2];
-//    srcDstVal = srcDstVal - srcVal + 128;
-//    srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
-//    srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
-//    srcDst[2] = srcDstVal;
-//
-//    srcDstVal = srcDst[3];
-//    srcVal = src[3];
-//    srcDstVal = srcDstVal - srcVal + 128;
-//    srcDstVal = srcDstVal > 255 ? 255 : srcDstVal;
-//    srcDstVal = srcDstVal < 0 ? 0 : srcDstVal;
-//    srcDst[3] = srcDstVal;
-}
-
-
-inline void GetBlockResult(const global uchar *pCurLine,
-                           global uchar *pDstBlock,
-                           int lPitch,
-                           int *lSumWei,
-                           const global int *pInvMap)
-{
-    int lSW = lSumWei[ 16 ];
-    int lInvW = pInvMap[ lSW ];
-
-    pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
-    subImage(pDstBlock, pCurLine);
-
-    pDstBlock += lPitch;
-    pCurLine += lPitch;
-    lSumWei += 4;
-
-
-
-
-    pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
-    subImage(pDstBlock, pCurLine);
-
-    pDstBlock += lPitch;
-    pCurLine += lPitch;
-    lSumWei += 4;
-
-
-
-    pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
-    subImage(pDstBlock, pCurLine);
-    pDstBlock += lPitch;
-    pCurLine += lPitch;
-    lSumWei += 4;
-
-
-
-    pDstBlock[ 0 ] = ( lSumWei[ 0 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 1 ] = ( lSumWei[ 1 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 2 ] = ( lSumWei[ 2 ] * lInvW + ( 1 << 19 )) >> 20;
-    pDstBlock[ 3 ] = ( lSumWei[ 3 ] * lInvW + ( 1 << 19 )) >> 20;
-    subImage(pDstBlock, pCurLine);
-
-}
 
 
 
@@ -594,111 +649,6 @@ inline void AddBlockSumByNei4
 
 
 
-//constant int4 vValue0 = {0, 0, 0, 0};
-//constant int4 v256 = {255, 255, 255, 255};
-//constant int4 v128 = {128, 128, 128, 128};
-//inline void ProcessBlock4x4(const global uchar *pCurLine,
-//                            const global uchar *pPreLine,
-//                            const global uchar *pNexLine,
-//                            global uchar *pDstLine,
-//                            const global int *pMap,
-//                            int lPitch,
-//                            const global int *pInvMap
-//                            )
-//{
-//    // 当前块, 权重设置为最大值256
-////    AddBlockSum(pCurLine, lPitch, lSumWei, 256);
-//
-//    short4 vCur[4];
-//    const global uchar *pNeiBlock = pCurLine;
-//    vCur[0] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
-//    vCur[1] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
-//    vCur[2] = convert_short4(vload4(0, pNeiBlock));    pNeiBlock += lPitch;
-//    vCur[3] = convert_short4(vload4(0, pNeiBlock));
-//
-//
-//    int lSumWei = 256;
-//    int4 vSumWei[4];
-//    vSumWei[0] = convert_int4(vCur[0]) << 8;
-//    vSumWei[1] = convert_int4(vCur[1]) << 8;
-//    vSumWei[2] = convert_int4(vCur[2]) << 8;
-//    vSumWei[3] = convert_int4(vCur[3]) << 8;
-//
-//
-//
-//
-//    // 领域8个位置
-//    AddBlockSumByNei4(vCur, pCurLine - 1, lPitch, vSumWei, &lSumWei, pMap);
-//    AddBlockSumByNei4(vCur, pCurLine + 1, lPitch, vSumWei, &lSumWei, pMap);
-//
-//    AddBlockSumByNei4(vCur, pPreLine - 1, lPitch, vSumWei, &lSumWei, pMap);
-//    AddBlockSumByNei4(vCur, pPreLine, lPitch, vSumWei, &lSumWei, pMap);
-//    AddBlockSumByNei4(vCur, pPreLine + 1, lPitch, vSumWei, &lSumWei, pMap);
-//
-//    AddBlockSumByNei4(vCur, pNexLine - 1, lPitch, vSumWei, &lSumWei, pMap);
-//    AddBlockSumByNei4(vCur, pNexLine, lPitch, vSumWei, &lSumWei, pMap);
-//    AddBlockSumByNei4(vCur, pNexLine + 1, lPitch, vSumWei, &lSumWei, pMap);
-//
-//
-//
-//    // average / sweight
-////    GetBlockResult(pCurLine, pDstLine, lPitch, lSumWei, pInvMap);
-//
-//    int lSW = lSumWei;
-//    int lInvW = pInvMap[ lSW ];
-//    int4 vInvW = {lInvW, lInvW, lInvW, lInvW};
-//
-//    int4 out;
-//    uchar4 out_char4;
-//    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
-//    out_char4 = convert_uchar4(out);
-//    vstore4(out_char4, 0, pDstLine);
-//    pDstLine += lPitch;
-//
-//    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
-//    out_char4 = convert_uchar4(out);
-//    vstore4(out_char4, 0, pDstLine);
-//    pDstLine += lPitch;
-//
-//    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
-//    out_char4 = convert_uchar4(out);
-//    vstore4(out_char4, 0, pDstLine);
-//    pDstLine += lPitch;
-//
-//    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
-//    out_char4 = convert_uchar4(out);
-//    vstore4(out_char4, 0, pDstLine);
-//    pDstLine += lPitch;
-//
-//
-////    int4 out;
-////    uchar4 out_char4;
-////    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
-////    out = out - convert_int4(vCur[0]) + v128;
-////    out = clamp(out, vValue0, v256);
-////    vstore4(convert_uchar4(out), 0, pDstLine);
-////    pDstLine += lPitch;
-////
-////    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
-////    out = out - convert_int4(vCur[1]) + v128;
-////    out = clamp(out, vValue0, v256);
-////    vstore4(convert_uchar4(out), 0, pDstLine);
-////    pDstLine += lPitch;
-////
-////    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
-////    out = out - convert_int4(vCur[2]) + v128;
-////    out = clamp(out, vValue0, v256);
-////    vstore4(convert_uchar4(out), 0, pDstLine);
-////    pDstLine += lPitch;
-////
-////    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
-////    out = out - convert_int4(vCur[3]) + v128;
-////    out = clamp(out, vValue0, v256);
-////    vstore4(convert_uchar4(out), 0, pDstLine);
-////    pDstLine += lPitch;
-//}
-
-
 
 #define AddBlockSumByNei_Define() \
     vDiff = abs_diff(vCur[0], neiBlock0);       \
@@ -729,6 +679,24 @@ inline void AddBlockSumByNei4
     lSumWei += lW;
 
 
+#define GetBlockResult_Define(vSumWei_i)                     \
+    out = (vSumWei_i * vInvW + ( 1 << 19 )) >> 20;                   \
+    out_char4 = convert_uchar4(out);                                \
+    vstore4(out_char4, 0, pDstLine);                                \
+    pDstLine += lPitch;                                             \
+
+
+#define GetBlockResult_Define2(vSumWei_i, vCur_i)                     \
+    out = (vSumWei_i * vInvW + ( 1 << 19 )) >> 20;                   \
+    out_char4 = convert_uchar4(out);                                \
+    out = convert_int4(out_char4) - convert_int4(vCur_i) + v128; \
+    out = clamp(out, vValue0, v256);  \
+    out_char4 = convert_uchar4(out);  \
+    vstore4(out_char4, 0, pDstLine);                                \
+    pDstLine += lPitch;
+
+
+
 
 /// new
 constant int4 vValue0 = {0, 0, 0, 0};
@@ -740,7 +708,8 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
                             global uchar *pDstLine,
                             const global uchar *pMap,
                             int lPitch,
-                            const global int *pInvMap
+                            const global int *pInvMap,
+                            int isSubImage
                             )
 {
     uchar8 data[6];
@@ -882,25 +851,19 @@ inline void ProcessBlock4x4(const global uchar *pCurLine,
 
     int4 out;
     uchar4 out_char4;
-    out = (vSumWei[0] * vInvW + ( 1 << 19 )) >> 20;
-    out_char4 = convert_uchar4(out);
-    vstore4(out_char4, 0, pDstLine);
-    pDstLine += lPitch;
 
-    out = (vSumWei[1] * vInvW + ( 1 << 19 )) >> 20;
-    out_char4 = convert_uchar4(out);
-    vstore4(out_char4, 0, pDstLine);
-    pDstLine += lPitch;
-
-    out = (vSumWei[2] * vInvW + ( 1 << 19 )) >> 20;
-    out_char4 = convert_uchar4(out);
-    vstore4(out_char4, 0, pDstLine);
-    pDstLine += lPitch;
-
-    out = (vSumWei[3] * vInvW + ( 1 << 19 )) >> 20;
-    out_char4 = convert_uchar4(out);
-    vstore4(out_char4, 0, pDstLine);
-    pDstLine += lPitch;
+    if(isSubImage > 0)
+    {
+        GetBlockResult_Define2(vSumWei[0], vCur[0])
+        GetBlockResult_Define2(vSumWei[1], vCur[1])
+        GetBlockResult_Define2(vSumWei[2], vCur[2])
+        GetBlockResult_Define2(vSumWei[3], vCur[3])
+    } else {
+        GetBlockResult_Define(vSumWei[0])
+        GetBlockResult_Define(vSumWei[1])
+        GetBlockResult_Define(vSumWei[2])
+        GetBlockResult_Define(vSumWei[3])
+    }
 
 }
 
@@ -1086,7 +1049,8 @@ inline void ProcessLines1Main(const global uchar *pCurLine,
 //	int dst_cols,
 //	int dst_rows,
 //	const global uchar *pMap,
-//	const global int *pInvMap
+//	const global int *pInvMap,
+//	int isSubImage
 //)
 //{
 //    //获取当前图像行和列
@@ -1186,7 +1150,8 @@ inline void ProcessLines1Main(const global uchar *pCurLine,
 //                        	pDstLine,
 //                        	pMap,
 //                        	src_step,
-//                        	pInvMap);
+//                        	pInvMap,
+//                        	isSubImage);
 //		}
 //	}
 //}
@@ -1204,7 +1169,8 @@ kernel void NLMDenoise
 	int dst_cols,
 	int dst_rows,
 	const global uchar *pMap,
-	const global int *pInvMap
+	const global int *pInvMap,
+	int isSubImage
 )
 {
     //获取当前图像行和列
@@ -1222,7 +1188,8 @@ kernel void NLMDenoise
                     pDstLine,
                     pMap,
                     src_step,
-                    pInvMap);
+                    pInvMap,
+                    isSubImage);
 }
 
 

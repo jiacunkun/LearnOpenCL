@@ -107,10 +107,10 @@ public:
         return GetTotal();
     }
 
-    void PrintTime(char* str)
+    void PrintTime(std::string str)
     {
         float t = UpdateAndGetDelta();
-        printf("%s = %fms\n", str, t);
+        printf("%s = %fms\n", str.c_str(), t);
     }
 
 private:

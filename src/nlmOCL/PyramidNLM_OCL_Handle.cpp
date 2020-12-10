@@ -48,7 +48,6 @@ MVoid PyramidNLM_OCL_Uninit()
 
     g_ocl_initializer.unInit(); // uninitializtion for ocl should be the most tail of the library
     g_is_initialized = false;
-
 }
 
 MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV)
@@ -108,9 +107,9 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
 
     // run GPU
 
-    lRet &= runPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY, false);
+    lRet &= runPyramidNLM_OCL(y_clmat, fNoiseVarY, false);
     timer.PrintTime("====================================== main run y ");
-    lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
+    lRet &= runUVPyramidNLM_OCL(uv_clmat, fNoiseVarUV);
     timer.PrintTime("====================================== main run uv ");
 
 

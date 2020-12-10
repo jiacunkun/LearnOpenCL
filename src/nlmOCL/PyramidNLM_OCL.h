@@ -18,14 +18,28 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             virtual bool create(const CLContext &context, ProgramSourceType type);
 
-            void initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
+            /**
+            * @brief 创建共享内存
+            * @param nWidth
+            * @param nHeight
+            */
+            void initBuffer(int nWidth, int nHeight);
+            void initBufferUV(int nWidth, int nHeight);
 
-            bool run(CLMat &src, CLMat &dst, float fNoiseVar, bool bIsDenoiseFor0);
 
-            bool runUV(CLMat &srcUV, CLMat &dstUV, float fNoiseVarUV);
+            /**
+            * @brief
+            * @param src                [in,out]
+            * @param fNoiseVar          [in]
+            * @param bIsDenoiseFor0     [in]
+            * @return
+            */
+            bool run(CLMat &src, float fNoiseVar, bool bIsDenoiseFor0);
+
+            bool runUV(CLMat &srcUV, float fNoiseVarUV);
 
         private:
-            bool NLMDenoise(CLMat &src, CLMat &dst, float fNoiseVar);
+            bool NLMDenoise(CLMat &src, CLMat &dst, float fNoiseVar, bool isSubImage = false);
 
         private:
             bool PyramidUp(CLMat &src, CLMat &dst);
@@ -69,21 +83,34 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int m_nStep = 0;
             bool m_bIsBlocking = true;
 
-        private:
+
+
+            static const int m_nLayer = 4;
+            CLMat m_PyrDownImg[m_nLayer];
+            CLMat m_DenoiseImg[m_nLayer];
+            CLMat m_TempImg[m_nLayer];
+
+
+            CLMat m_PyrDownImgShare[m_nLayer];
+            CLMat m_DenoiseImgShare[m_nLayer];
+            CLMat m_TempImgShare[m_nLayer];
+            CLMat m_srcUShare;
+            CLMat m_srcVShare;
+
+
+
             // NLM降噪查表数据
             MByte *m_pMap = MNull;
             MFloat m_fNoiseVar = -1;
 
             CLMat m_pMap_clmat;
             CLMat m_pInvMap_clmat;
-
-
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类
-        bool runPyramidNLM_OCL(CLMat &src, CLMat &dst, float fNoiseVar, bool bIsDenoiseFor0);
+        bool runPyramidNLM_OCL(CLMat &src, float fNoiseVar, bool bIsDenoiseFor0);
 
-        bool runUVPyramidNLM_OCL(CLMat &srcUV, CLMat &dstUV, float fNoiseVarUV);
+        bool runUVPyramidNLM_OCL(CLMat &srcUV, float fNoiseVarUV);
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END
