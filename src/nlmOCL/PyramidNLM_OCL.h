@@ -79,7 +79,7 @@ struct PyramidNLM_Data
             int m_nWidth = 0;
             int m_nHeight = 0;
             int m_nStep = 0;
-            bool m_bIsBlocking = true;
+            bool m_bIsBlocking = false;
             int m_nLayer = 3; //layer of pyramid
             int m_lExpandSize = 4;
 
