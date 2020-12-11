@@ -210,7 +210,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             LOGD("initBuffer++");
             for (int i = 0; i < nLayer; i++)
             {
-                m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                if (i != 0)
+                {
+                    m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                }
                 m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
                 m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
             }
@@ -250,10 +253,11 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                     bRet &= NLMDenoise(m_PyrDownImg[i], m_PyrDownImg[i], dst, fTmpVar, 0);
                     //m_DenoiseImg[0].copyTo(dst);// copy result to output
                 }
-                else
-                {
-                    m_PyrDownImg[0].copyTo(dst);// copy result to output
-                }
+                // becase of src is same dst, so delete it
+                //else
+                //{
+                //    m_PyrDownImg[0].copyTo(dst);// copy result to output
+                //}
             }
 
             //Mat tmpsrc = src.map();
