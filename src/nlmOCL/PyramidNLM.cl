@@ -63,10 +63,10 @@ kernel void PyramidDown
 	int x_cur = idx_x2;
 	int x_next = min(idx_x2+1,Src_Width-1);//(idx_x2 + 1) > (Src_Width - 1) ? 
 
-    global uchar* src0 = (pSrc + x_pre + y_pre * Src_Pitch);
-	global uchar* src1 = (pSrc + x_pre + y_cur * Src_Pitch);
-	global uchar* src2 = (pSrc + x_pre + y_next * Src_Pitch);
-    global uchar* dst = (pDst + idx + idy * Dst_Pitch);
+    global uchar* src0 = pSrc + mad24(y_pre, Src_Pitch, x_pre);
+	global uchar* src1 = pSrc + mad24(y_cur, Src_Pitch, x_pre);
+	global uchar* src2 = pSrc + mad24(y_next, Src_Pitch, x_pre);
+    global uchar* dst = pDst + mad24(idy, Dst_Pitch, idx);
 
     short8 pre = convert_short8(vload8(0, src0));
     short8 cur = convert_short8(vload8(0, src1));

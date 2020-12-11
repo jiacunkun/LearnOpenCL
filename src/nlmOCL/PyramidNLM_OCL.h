@@ -18,6 +18,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             virtual bool create(const CLContext& context, ProgramSourceType type);
             void initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
             bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
+            bool runY(CLMat& srcY, CLMat& dstY, float fNoiseVarY);
             bool runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
         private:
@@ -62,8 +63,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类
-        bool runPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
 
+        bool runYPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar);
         bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
 

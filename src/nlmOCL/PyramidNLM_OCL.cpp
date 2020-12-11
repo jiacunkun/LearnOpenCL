@@ -149,6 +149,15 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 		}
 
+        bool PyramidNLM_OCL::runY(CLMat& srcY, CLMat& dstY, float fNoiseVarY)
+        {
+            bool bRet = true;
+
+            bRet &= run(srcY, dstY, fNoiseVarY, false);
+
+            return bRet;
+        }
+
         bool PyramidNLM_OCL::runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
         {
             bool bRet = true;
@@ -283,7 +292,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             size_t global_size[] = { (size_t)(lMaxNum), (size_t)(1) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
-            cl_uint dims = 1;
+            cl_uint dims = 2;
             bRet = kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
 #if CALCULATE_TIME
@@ -661,7 +670,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         }
 
-        bool runPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0)
+        bool runYPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar)
         {
             if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
             {
@@ -670,7 +679,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             }
 
-            return GPyramidNLM_OCLRetriever::get().run(src, dst, fNoiseVar, bIsDenoiseFor0);
+            return GPyramidNLM_OCLRetriever::get().runY(src, dst, fNoiseVar);
 
         }
 
