@@ -35,6 +35,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             * @return
             */
             bool run(CLMat &src, float fNoiseVar, bool bIsDenoiseFor0);
+            bool run(acv::Mat& src, acv::Mat& dst, float fNoiseVar, bool bIsDenoiseFor0);
 
             bool runUV(CLMat &srcUV, float fNoiseVarUV);
 
@@ -84,6 +85,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool m_bIsBlocking = true;
 
 
+            static const int m_nPadNum = 8;
 
             static const int m_nLayer = 4;
             CLMat m_PyrDownImg[m_nLayer];
@@ -111,6 +113,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         bool runPyramidNLM_OCL(CLMat &src, float fNoiseVar, bool bIsDenoiseFor0);
 
         bool runUVPyramidNLM_OCL(CLMat &srcUV, float fNoiseVarUV);
+
+        bool runPyramidNLM_Y(acv::Mat& src, acv::Mat& dst, float fNoiseVar, bool bIsDenoiseFor0);
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END

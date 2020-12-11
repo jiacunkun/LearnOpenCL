@@ -1,3 +1,4 @@
+//#include <MacTypes.h>
 #include "PyramidNLM_OCL_Handle.h"
 #include "PyramidNLM_OCL.h"
 #include "Arcsoft_Define_For_SingleImage.h"
@@ -79,49 +80,50 @@ MInt32 PyramidNLM_OCL_Handle(LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat 
         LOGI(gVersionString);
     }
 
+    int width = pSrc->i32Width;
+    int height = pSrc->i32Height;
 
 
     // new memory
-    acv::Mat y_mat(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[ 0 ],
-                   pSrc->pi32Pitch[ 0 ]); // set pointer to a Mat
-    acv::Mat uv_mat(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[ 1 ],
-                    pSrc->pi32Pitch[ 1 ]); // set pointer to a Mat
-    acv::ocl::CLMat y_clmat;
-    acv::ocl::CLMat uv_clmat;
-    //if (y_clmat.is_svm_available()) // an eample to use SVM buffer
-    //{
-    //	y_clmat.create_with_svm(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
-    //    uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
-    //}
-    //else
+    acv::Mat cpu_y_src(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[ 0 ], pSrc->pi32Pitch[ 0 ]);
+    acv::Mat cpu_y_dst(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[ 0 ], pDst->pi32Pitch[ 0 ]);
+
+    if( 1 )
     {
-        y_clmat.create_with_clmem(pSrc->i32Height, pSrc->i32Width, ACV_8UC1);
-        uv_clmat.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
+        /// 第一层 gpu 内存内部申请
+        timer.Update();
+        runPyramidNLM_Y(cpu_y_src, cpu_y_dst, fNoiseVarY, false);
+        timer.PrintTime("====================================== main run y ");
+
+    } else {
+        /// 第一层 gpu 内存外部申请
+        acv::ocl::CLMat gpu_y_share;
+        gpu_y_share.create_with_clmem(pSrc->i32Height + 16, pSrc->i32Width + 16, ACV_8UC1);
+        acv::Rect roi(8, 8, width, height);
+        acv::ocl::CLMat gpu_y = acv::ocl::CLMat(gpu_y_share, roi);
+
+        lRet = gpu_y.copyFrom(cpu_y_src);
+        timer.PrintTime("data cpu to gpu ");
+        lRet &= runPyramidNLM_OCL(gpu_y, fNoiseVarY, false);
+        timer.PrintTime("====================================== main run y ");
+        lRet &= gpu_y.copyTo(cpu_y_dst);
+        timer.PrintTime("data gpu to cpu");
     }
 
-    // copy CPU data to GPU
-    lRet = y_clmat.copyFrom(y_mat);
-    lRet &= uv_clmat.copyFrom(uv_mat);
-    timer.PrintTime("main copy 1");
 
 
-    // run GPU
 
-    lRet &= runPyramidNLM_OCL(y_clmat, fNoiseVarY, false);
-    timer.PrintTime("====================================== main run y ");
-    lRet &= runUVPyramidNLM_OCL(uv_clmat, fNoiseVarUV);
+
+    acv::Mat cpu_uv_src(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1, pSrc->ppu8Plane[ 1 ], pSrc->pi32Pitch[ 1 ]);
+    acv::ocl::CLMat gpu_uv;
+    gpu_uv.create_with_clmem(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1);
+    lRet &= gpu_uv.copyFrom(cpu_uv_src);
+    lRet &= runUVPyramidNLM_OCL(gpu_uv, fNoiseVarUV);
+    acv::Mat cpu_uv_dst(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[ 1 ], pDst->pi32Pitch[ 1 ]); // create a buffer on the host
+    lRet &= gpu_uv.copyTo(cpu_uv_dst);
     timer.PrintTime("====================================== main run uv ");
 
 
-
-    // copy GPU data to CPU
-    acv::Mat y_dst_mat(pSrc->i32Height, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[ 0 ],
-                       pDst->pi32Pitch[ 0 ]); // create a buffer on the host
-    lRet &= y_clmat.copyTo(y_dst_mat); // copy the result to the host
-    acv::Mat uv_dst_mat(pSrc->i32Height / 2, pSrc->i32Width, ACV_8UC1, pDst->ppu8Plane[ 1 ],
-                        pDst->pi32Pitch[ 1 ]); // create a buffer on the host
-    lRet &= uv_clmat.copyTo(uv_dst_mat); // copy the result to the host
-    timer.PrintTime("main copy 2");
 
 
 

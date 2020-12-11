@@ -177,14 +177,15 @@ int main()
             int w = out_org.cols;
             int h = out_org.rows;
 
+            int pad = 200;
 
             int max = 0;
             int count = 0;
-            for(int i = 100; i < h - 100; ++i)
+            for(int i = pad; i < h - pad; ++i)
             {
                 unsigned char* p1 = RGBImg.data + i * w * 4;
                 unsigned char* p2 = out_org.data + i * w * 4;
-                for(int j = 100; j < w * 4 - 400; ++j)
+                for(int j = pad; j < w * 4 - pad * 4; ++j)
                 {
                     int diff = abs(p1[j] - p2[j]);
                     max = std::max(max, diff);

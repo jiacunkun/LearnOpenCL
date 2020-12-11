@@ -83,7 +83,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         */
         void PyramidNLM_OCL::initBuffer(int nWidth, int nHeight)
         {
-            if(m_DenoiseImgShare[0].width() < nWidth || m_DenoiseImgShare[0].height() < nHeight)
+            if(m_DenoiseImgShare[0].width() < (nWidth + 16) || m_DenoiseImgShare[0].height() < (nHeight + 16))
             {
                 /// 先释放
                 for (int i = 0; i < m_nLayer; i++)
@@ -94,20 +94,34 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 }
 
 
-
                 /// 再申请
-                for (int i = 0; i < m_nLayer; i++)
+                for (int i = 1; i < m_nLayer; i++)
                 {
-                    int step = ((nWidth + 15) >> 4) << 4; /// 多申请几个，避免向量操作时内存越界
-                    m_PyrDownImgShare[i].create_with_clmem(nHeight, nWidth, ACV_8UC1, step);
-                    m_DenoiseImgShare[i].create_with_clmem(nHeight, nWidth, ACV_8UC1, step);
-                    m_TempImgShare[i].create_with_clmem(nHeight, nWidth, ACV_8UC1, step);
+                    int w = (nWidth >> i) + 16; /// 左右各外扩8个像素
+                    int h = (nHeight >> i) + 16;
+                    int step = ((w + 15) >> 4) << 4; /// 16的倍数, 保证内存对齐（内部应该也有做这个操作）
+                    m_PyrDownImgShare[i].create_with_clmem(h, w, ACV_8UC1, step);
+                    m_DenoiseImgShare[i].create_with_clmem(h, w, ACV_8UC1, step);
+                    m_TempImgShare[i].create_with_clmem(h, w, ACV_8UC1, step);
+                }
+
+
+                {
+                    int i = 0;
+                    int w = (nWidth >> i) + 16; /// 左右各外扩8个像素
+                    int h = (nHeight >> i) + 16;
+                    int step = ((w + 15) >> 4) << 4; /// 16的倍数, 保证内存对齐（内部应该也有做这个操作）
+                    m_PyrDownImgShare[i].create_with_clmem(h, w, ACV_8UC1, step);
+                    //m_PyrDownImgShare[i].create_with_svm(h, w, ACV_8UC1, step);
+                    m_DenoiseImgShare[i].create_with_clmem(h, w, ACV_8UC1, step);
                 }
             }
         }
 
         void PyramidNLM_OCL::initBufferUV(int nWidth, int nHeight)
         {
+            nWidth += 8 * 2;
+            nHeight += 8 * 2;
             if(m_srcUShare.width() < nWidth || m_srcUShare.height() < nHeight)
             {
                 m_srcUShare.release();
@@ -118,6 +132,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 m_srcVShare.create_with_clmem(nHeight, nWidth, ACV_8UC1, step);
             }
         }
+
 
        
 
@@ -220,19 +235,15 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             bool bRet = true;
 
+            /// 更新共享内存
             int nWidth = srcUV.width() / 2;
             int nHeight = srcUV.height();
+            initBufferUV(nWidth, nHeight);
 
-            CLMat u, v;
-            u.create_with_clmem(nHeight, nWidth, ACV_8UC1);
-            v.create_with_clmem(nHeight, nWidth, ACV_8UC1);
-
-
-
-            //initBufferUV(nWidth, nHeight);
-            //Rect roi(0, 0, nWidth, nHeight);
-            //CLMat u1 = CLMat(m_srcUShare, roi);
-            //CLMat v1 = CLMat(m_srcUShare, roi);
+            /// 创建内存
+            Rect roi(8, 8, nWidth, nHeight);
+            CLMat u = CLMat(m_srcUShare, roi);
+            CLMat v = CLMat(m_srcVShare, roi);
             //printf("yyy %d, %d, %d, %d, %d, %d, %d, %d\n", u.width(), u1.width(), u.height(), u1.height(), u.stride(0), u1.stride(0), u.steps(0), u1.steps(0));
 
 
@@ -258,6 +269,48 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         }
 
 
+
+        bool PyramidNLM_OCL::run(acv::Mat& src, acv::Mat& dst, float fNoiseVar, bool bIsDenoiseFor0)
+        {
+            BasicTimer timer;
+            bool bRet = true;
+
+
+            ///===================================================================
+            /// new blank memory
+            ///===================================================================
+            int nWidth = src.cols;
+            int nHeight = src.rows;
+            initBuffer(nWidth, nHeight);
+
+
+            ///===================================================================
+            /// copy CPU data to GPU
+            ///===================================================================
+            Rect roi(8, 8, nWidth, nHeight);
+            CLMat src_gpu = CLMat(m_PyrDownImgShare[0], roi);
+
+            bRet = src_gpu.copyFrom(src);
+            timer.PrintTime("py 2 copy CPU data to GPU");
+
+
+            ///===================================================================
+            /// run
+            ///===================================================================
+            bRet &= run(src_gpu, fNoiseVar, bIsDenoiseFor0);
+
+
+            ///===================================================================
+            /// copy GPU data to CPU
+            ///===================================================================
+            bRet &= src_gpu.copyTo(dst);
+            timer.PrintTime("py 6 copy GPU data to CPU");
+
+
+            return bRet;
+        }
+
+
         bool PyramidNLM_OCL::run(CLMat& src, float fNoiseVar, bool bIsDenoiseFor0)
         {
             BasicTimer timer;
@@ -275,11 +328,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             initBuffer(nWidth, nHeight);
             /// 2、第一层内存
             {
-                m_PyrDownImg[0] = src;
+                m_PyrDownImg[0] = src; /// src 实际内存是有做外扩的, 由于会用到 ION 内存, 可以将src的申请放在外部
 
                 Rect roi(0, 0, nWidth, nHeight);
                 m_DenoiseImg[0] = CLMat(m_DenoiseImgShare[0], roi);
-
 
                 //int i = 0;
                 //printf("\n\n %d\n", i);
@@ -290,15 +342,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             /// 3、剩下几层内存
             for (int i = 1; i < m_nLayer; i++)
             {
-                Rect roi(0, 0, nWidth >> i, nHeight >> i);
+                Rect roi(8, 8, nWidth >> i, nHeight >> i);
                 m_PyrDownImg[i] = CLMat(m_PyrDownImgShare[i], roi);
                 m_DenoiseImg[i] = CLMat(m_DenoiseImgShare[i], roi);
                 m_TempImg[i] = CLMat(m_TempImgShare[i], roi);
-
-                //printf("\n\n %d\n", i);
-                //printf("w = %d, %d \n", m_PyrDownImg[i].width(), m_DenoiseImg[i].width());
-                //printf("h = %d, %d \n", m_PyrDownImg[i].height(), m_DenoiseImg[i].height());
-                //printf("s = %d, %d \n", m_PyrDownImg[i].steps(0), m_DenoiseImg[i].steps(0));
             }
             timer.PrintTime("py 1 new buffer");
 
@@ -343,7 +390,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
                 bRet &= PyramidUp(m_DenoiseImg[i], m_PyrDownImg[i - 1]); //timer.PrintTime("3");
                 //bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
 
-                timer.PrintTime("44444444444444444");
+                //timer.PrintTime("44444444444444444");
             }
             timer.PrintTime("py 4 run ****************************");
 
@@ -639,6 +686,18 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             }
 
             return GPyramidNLM_OCLRetriever::get().runUV(srcUV, fNoiseVarUV);
+        }
+
+
+        bool runPyramidNLM_Y(acv::Mat& src, acv::Mat& dst, float fNoiseVar, bool bIsDenoiseFor0)
+        {
+            if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
+            {
+                LOG(ERROR) << "The object is not created. Please call GSampleResizeOCLRetriever::registerToGlobalHolder to register";
+                return false;
+            }
+
+            return GPyramidNLM_OCLRetriever::get().run(src, dst, fNoiseVar, bIsDenoiseFor0);
         }
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END
