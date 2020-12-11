@@ -12,7 +12,7 @@ USING_NS_SINFLE_IMAGE_ENHANCEMENT
 static bool g_is_initialized = false;
 static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // init env handle
 
-static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 0.5.8!\n";
+static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 0.10.2!\n";
 
 MInt32 PyramidNLM_OCL_Init()
 {

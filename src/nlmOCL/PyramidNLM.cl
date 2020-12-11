@@ -79,18 +79,18 @@ kernel void PyramidDown
     {
         sum_hor.s123 = sum_ver.s135 + (short)(2)*sum_ver.s246 + sum_ver.s357;
 
-        short hor0 = src0[0] + src1[0]*2 + src2[0];
+        short hor0 = src0[0] + src1[0]*(short)(2) + src2[0];
         sum_hor.s0 = sum_ver.s1 + 2*sum_ver.s0 + hor0;
     }
     else
     {
         sum_hor.s012 = sum_ver.s024 + (short)(2)*sum_ver.s135 + sum_ver.s246;
 
-        short hor8 = src0[8] + src1[8]*2 + src2[8];
-        sum_hor.s3 = sum_ver.s6 + 2*sum_ver.s7 + hor8;   
+        short hor8 = src0[8] + src1[8]*(short)(2) + src2[8];
+        sum_hor.s3 = sum_ver.s6 + (short)(2)*sum_ver.s7 + hor8;   
     }
 
-    sum_hor = sum_hor + (short4)(8) >> 4;
+    sum_hor = (sum_hor + (short4)(8)) / (short4)(16);
     
     vstore4(convert_uchar4(sum_hor), 0, dst);
 
