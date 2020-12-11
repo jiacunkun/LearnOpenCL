@@ -9,10 +9,10 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
 static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 
+
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
             LOGD("PyramidNLM_OCL()");
-            
             map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
             
         }
@@ -158,32 +158,12 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         {
             bool bRet = true;
 
-            int nStep = srcY.stride(0);
-            int nWidth = srcY.cols();
-            int nHeight = srcY.rows();
+            ptr = static_cast<PyramidNLM_Data*>(handle);
 
-            // new blank memory
-            CLMat m_YPyrDownImg[4];
-            CLMat m_YDenoiseImg[4];
-            CLMat m_YTempImg[4];
-            CLMat m_YSrcImgPad[4];
-            CLMat m_YDstImgPad[4];
-            LOGD("initBuffer++");
-            for (int i = 1; i < m_nLayer; i++)
-            {
-                // no need the 0 layer
-                int newWidth = nWidth + (1 << (i - 1)) >> i;
-                int newHeight = nHeight + (1 << (i - 1)) >> i;
-                m_YPyrDownImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
-                m_YDenoiseImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
-                m_YTempImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
-                m_YSrcImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
-                m_YDstImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
-            }
-            LOGD("initBuffer--");
+            m_nLayer = ptr->nLayer;
 
             // run
-            bRet &= run(srcY, dstY, fNoiseVarY, false, m_YPyrDownImg, m_YDenoiseImg, m_YTempImg, m_YSrcImgPad, m_YDstImgPad);
+            bRet &= run(srcY, dstY, fNoiseVarY, false, ptr->m_YPyrDownImg, ptr->m_YDenoiseImg, ptr->m_YTempImg, ptr->m_YSrcImgPad, ptr->m_YDstImgPad);
 
             return bRet;
         }
@@ -192,48 +172,22 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         {
             bool bRet = true;
 
-            CLMat u, v;
-            u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
-            v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
+            ptr = static_cast<PyramidNLM_Data*>(handle);
 
-            bRet &= SplitNV21Channel(srcUV, u, v);
+            m_nLayer = ptr->nLayer;
 
-            int nStep = u.stride(0);
-            int nWidth = u.cols();
-            int nHeight = u.rows();
-
-            // new blank memory
-            CLMat m_UVPyrDownImg[4];
-            CLMat m_UVDenoiseImg[4];
-            CLMat m_UVTempImg[4];
-            CLMat m_UVSrcImgPad[4];
-            CLMat m_UVDstImgPad[4];
-            LOGD("initBuffer++");
-            for (int i = 1; i < m_nLayer; i++)
-            {
-                // no need the 0 layer
-                int newWidth = nWidth + (1 << (i - 1)) >> i;
-                int newHeight = nHeight + (1 << (i - 1)) >> i;
-                m_UVPyrDownImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
-                m_UVDenoiseImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
-                m_UVTempImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
-                m_UVSrcImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
-                m_UVDstImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
-            }
-            m_UVSrcImgPad[0].create_with_clmem((nHeight) + 2 * m_lExpandSize, (nWidth) + 2 * m_lExpandSize, ACV_8UC1);
-            m_UVDstImgPad[0].create_with_clmem((nHeight) + 2 * m_lExpandSize, (nWidth) + 2 * m_lExpandSize, ACV_8UC1);
-            LOGD("initBuffer--");
+            bRet &= SplitNV21Channel(srcUV, ptr->u, ptr->v);
 
 
-            bRet &= run(u, u, fNoiseVarUV, true, m_UVPyrDownImg, m_UVDenoiseImg, m_UVTempImg, m_UVSrcImgPad, m_UVDstImgPad);
-            bRet &= run(v, v, fNoiseVarUV, true, m_UVPyrDownImg, m_UVDenoiseImg, m_UVTempImg, m_UVSrcImgPad, m_UVDstImgPad);
+            bRet &= run(ptr->u, ptr->u, fNoiseVarUV, true, ptr->m_UVPyrDownImg, ptr->m_UVDenoiseImg, ptr->m_UVTempImg, ptr->m_UVSrcImgPad, ptr->m_UVDstImgPad);
+            bRet &= run(ptr->v, ptr->v, fNoiseVarUV, true, ptr->m_UVPyrDownImg, ptr->m_UVDenoiseImg, ptr->m_UVTempImg, ptr->m_UVSrcImgPad, ptr->m_UVDstImgPad);
 
             //Mat tmpSrc = u.map();
             //Mat tmpDst = u_dst.map();
             //u.unmap();
             //u_dst.unmap();
 
-            bRet &= MergeNV21Channel(u, v, dstUV);
+            bRet &= MergeNV21Channel(ptr->u, ptr->v, dstUV);
 
             //Mat tmpSrc = srcUV.map();
             //Mat tmpDst = dstUV.map();

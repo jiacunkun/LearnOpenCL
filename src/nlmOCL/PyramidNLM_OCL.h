@@ -9,6 +9,31 @@
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
+
+struct PyramidNLM_Data
+{
+    int nLayer;
+    int nStep;
+    int nWidth;
+    int nHeight;
+
+    CLMat u;
+    CLMat v;
+
+    // Y
+    CLMat m_YPyrDownImg[4];
+    CLMat m_YDenoiseImg[4];
+    CLMat m_YTempImg[4];
+    CLMat m_YSrcImgPad[4];
+    CLMat m_YDstImgPad[4];
+    // UV
+    CLMat m_UVPyrDownImg[4];
+    CLMat m_UVDenoiseImg[4];
+    CLMat m_UVTempImg[4];
+    CLMat m_UVSrcImgPad[4];
+    CLMat m_UVDstImgPad[4];
+};
+
         class PyramidNLM_OCL : public GlobalKernelsHolder
         {
         public:
@@ -55,12 +80,13 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int m_nHeight = 0;
             int m_nStep = 0;
             bool m_bIsBlocking = true;
-            int m_nLayer = 4; //layer of pyramid
+            int m_nLayer = 3; //layer of pyramid
             int m_lExpandSize = 4;
 
         private:
             CLMat map_clmat;
             MFloat m_fNoiseVar = -1;
+            PyramidNLM_Data* ptr;
         };
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类

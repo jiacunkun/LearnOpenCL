@@ -12,9 +12,10 @@ USING_NS_SINFLE_IMAGE_ENHANCEMENT
 static bool g_is_initialized = false;
 static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // init env handle
 
-static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 1.7.2!\n";
+static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 1.8.2!\n";
 
-MInt32 PyramidNLM_OCL_Init()
+
+MInt32 PyramidNLM_OCL_Init(MHandle* pHandle, int nLayer, int nStep, int nWidth, int nHeight)
 {
     // init env
     if (g_is_initialized)
@@ -32,12 +33,56 @@ MInt32 PyramidNLM_OCL_Init()
 
     g_is_initialized = true;
 
+    // do initialization for your datas
+    PyramidNLM_Data* ptr = new PyramidNLM_Data;
+    {
+        ptr->nLayer = nLayer;
+        ptr->nStep = nStep;
+        ptr->nWidth = nWidth;
+        ptr->nHeight = nHeight;
+        int m_lExpandSize = 4;
+
+        ptr->u.create_with_clmem(nHeight >> 1, nWidth >> 1, ACV_8UC1);
+        ptr->v.create_with_clmem(nHeight >> 1, nWidth >> 1, ACV_8UC1);
+
+        for (int i = 1; i < nLayer; i++)
+        {
+            // no need the 0 layer
+            int newWidth = nWidth + (1 << (i - 1)) >> i;
+            int newHeight = nHeight + (1 << (i - 1)) >> i;
+            ptr->m_YPyrDownImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+            ptr->m_YDenoiseImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+            ptr->m_YTempImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+            ptr->m_YSrcImgPad[i].create_with_clmem((newHeight)+2 * m_lExpandSize, (newWidth)+2 * m_lExpandSize, ACV_8UC1);
+            ptr->m_YDstImgPad[i].create_with_clmem((newHeight)+2 * m_lExpandSize, (newWidth)+2 * m_lExpandSize, ACV_8UC1);
+        }
+
+
+        for (int i = 1; i < nLayer; i++)
+        {
+            // no need the 0 layer
+            int newWidth = nWidth + (1 << (i - 1)) >> i;
+            int newHeight = nHeight + (1 << (i - 1)) >> i;
+            ptr->m_UVPyrDownImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+            ptr->m_UVDenoiseImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+            ptr->m_UVTempImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+            ptr->m_UVSrcImgPad[i].create_with_clmem((newHeight)+2 * m_lExpandSize, (newWidth)+2 * m_lExpandSize, ACV_8UC1);
+            ptr->m_UVDstImgPad[i].create_with_clmem((newHeight)+2 * m_lExpandSize, (newWidth)+2 * m_lExpandSize, ACV_8UC1);
+        }
+        ptr->m_UVSrcImgPad[0].create_with_clmem((nHeight)+2 * m_lExpandSize, (nWidth)+2 * m_lExpandSize, ACV_8UC1);
+        ptr->m_UVDstImgPad[0].create_with_clmem((nHeight)+2 * m_lExpandSize, (nWidth)+2 * m_lExpandSize, ACV_8UC1);
+       
+    }
+
+    *pHandle = (MHandle)(ptr);
+
+
     LOGI(gVersionString);
     return 0;
 
 }
 
-MVoid PyramidNLM_OCL_Uninit()
+MVoid PyramidNLM_OCL_Uninit(MHandle* pHandle)
 {
     // release env
 
@@ -47,6 +92,11 @@ MVoid PyramidNLM_OCL_Uninit()
         return;
     }
 
+    // delete your data
+    PyramidNLM_Data* ptr = static_cast<PyramidNLM_Data*>(*pHandle);
+    delete ptr;
+    *pHandle = nullptr;
+
     g_ocl_initializer.unInit(); // uninitializtion for ocl should be the most tail of the library
     g_is_initialized = false;
 
@@ -55,6 +105,11 @@ MVoid PyramidNLM_OCL_Uninit()
 MInt32 PyramidNLM_OCL_Handle(MHandle handle, LPASVLOFFSCREEN pSrc, LPASVLOFFSCREEN pDst, MFloat fNoiseVarY, MFloat fNoiseVarUV)
 {
     LOGD("PyramidNLM_OCL_Handle++");
+    if (handle == MNull || pSrc == MNull || pDst == MNull)
+    {
+        LOGE("handle == MNull || pSrc == MNull || pDst == MNull !!!");
+        return -1;
+    }
 
 #if CALCULATE_TIME
     BasicTimer time;

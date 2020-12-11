@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include "mobilecv.h"
-
+#include <opencv2/opencv.hpp>
 #include "PyramidNLM_OCL_Handle.h"
 
 using namespace std;
@@ -114,9 +114,10 @@ int main(int argc, char* argv[])
     {
         MFloat fNoiseVarY = 100;
         MFloat fNoiseVarUV = 100;
-        PyramidNLM_OCL_Init();
-        lret = PyramidNLM_OCL_Handle(MNull, &guided, &guided, fNoiseVarY, fNoiseVarUV);
-        PyramidNLM_OCL_Uninit();
+        MHandle handle = MNull;
+        PyramidNLM_OCL_Init(&handle, 3, width, width, height);
+        lret = PyramidNLM_OCL_Handle(handle, &guided, &guided, fNoiseVarY, fNoiseVarUV);
+        PyramidNLM_OCL_Uninit(&handle);
     }
 
     if (1)
@@ -142,6 +143,19 @@ int main(int argc, char* argv[])
 
         fclose(fpOutput);
         fpOutput = nullptr;
+
+#if 1
+        cv::Mat SrcImg(height * 3 / 2, width, CV_8UC1, guided.ppu8Plane[0]);
+        cv::Mat RGBImg;
+        cv::cvtColor(SrcImg, RGBImg, cv::COLOR_YUV2BGRA_NV12);
+
+        pAt = srcName.find_last_of('.');
+        extName = srcName.substr(pAt);
+        dstName = srcName.substr(0, pAt) + "_OutputImg_12.10_GPU_NLM.BMP";
+        cout << "Result saved to " << dstName << endl;
+        cv::imwrite(dstName, RGBImg);
+
+#endif
     }
 
 exit:
