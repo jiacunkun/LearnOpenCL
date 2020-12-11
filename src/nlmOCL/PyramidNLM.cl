@@ -867,7 +867,6 @@ inline int Block_WeiCom(short4 curr0, short4 curr1, short4 curr2, short4 curr3,
 		short8 Data3 = convert_short8(vload8(0, pTmpSrc + src_step * 3));
 		short8 Data4 = convert_short8(vload8(0, pTmpSrc + src_step * 4));
 		short8 Data5 = convert_short8(vload8(0, pTmpSrc + src_step * 5));
-		uint4  mask = (uint4)(1, 2, 3, 4);
 		short4 cent0 = Data1.s1234;
 		short4 cent1 = Data2.s1234;
 		short4 cent2 = Data3.s1234;
@@ -883,7 +882,6 @@ inline int Block_WeiCom(short4 curr0, short4 curr1, short4 curr2, short4 curr3,
 		Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, cent0, cent1, cent2, cent3, 256);
 		SumWei = SumWei + 256;
 
-		mask = (uint4)(0, 1, 2, 3);
 		curr0 = Data0.s0123;
 		curr1 = Data1.s0123;
 		curr2 = Data2.s0123;
@@ -902,7 +900,6 @@ inline int Block_WeiCom(short4 curr0, short4 curr1, short4 curr2, short4 curr3,
 		Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3,  curr2, curr3, curr0, curr1, lWei);
 		SumWei = SumWei + lWei;
 
-		mask = (uint4)(1, 2, 3, 4);
 		curr0 = Data0.s1234;
 		lWei = Block_WeiCom(curr0, cent0, cent1, cent2, cent0, cent1, cent2, cent3, pMap);
 		Block_WeiAdd(&WeiSum0, &WeiSum1, &WeiSum2, &WeiSum3, curr0, cent0, cent1, cent2, lWei);
@@ -914,7 +911,6 @@ inline int Block_WeiCom(short4 curr0, short4 curr1, short4 curr2, short4 curr3,
 		SumWei = SumWei + lWei;
 
 
-		mask = (uint4)(2, 3, 4, 5);
 		curr0 = Data0.s2345;
 		curr1 = Data1.s2345;
 		curr2 = Data2.s2345;

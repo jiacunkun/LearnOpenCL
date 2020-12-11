@@ -12,6 +12,15 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
             LOGD("PyramidNLM_OCL()");
+            // init map
+            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
+            //}
+            //else
+            {
+                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
+            }
         }
 
         PyramidNLM_OCL::~PyramidNLM_OCL()
@@ -155,15 +164,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         {
             bool bRet = true;
 
-            // init map
-            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
-            //{
-            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //}
-            //else
-            {
-                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
-            }
+         
 
             int nStep = srcY.stride(0);
             int nWidth = srcY.cols();
@@ -192,15 +193,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         {
             bool bRet = true;
 
-            // init map
-            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
-            //{
-            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //}
-            //else
-            {
-                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
-            }
+     
 
 
             CLMat u, v;
@@ -425,10 +418,10 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 
 #endif
 
-            Mat tmpsrc = src.map();
-            Mat tmpdst = dst.map();
-            src.unmap();
-            dst.unmap();
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
 #if CALCULATE_TIME
             LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif
@@ -482,10 +475,10 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             cl_uint dims = 2;
             bRet &= kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            Mat tmpsrc1 = dstPad_clmat.map();
-            Mat tmpdst1 = srcPad_clmat.map();
-            dstPad_clmat.unmap();
-            srcPad_clmat.unmap();
+            //Mat tmpsrc1 = dstPad_clmat.map();
+            //Mat tmpdst1 = srcPad_clmat.map();
+            //dstPad_clmat.unmap();
+            //srcPad_clmat.unmap();
 
 #if CALCULATE_TIME
             LOGD("%s[%d]: NLM kernel time is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
