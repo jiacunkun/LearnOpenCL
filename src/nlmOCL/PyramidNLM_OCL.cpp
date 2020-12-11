@@ -330,7 +330,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             CLKernel& kernel = getKernelOfPyramidDown(0);
             kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows); // set argument
-            size_t global_size[] = { (size_t)(dst_cols), (size_t)(dst_rows) }; // set global size
+            size_t global_size[] = { (size_t)(dst_cols+3>>2), (size_t)(dst_rows) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
@@ -390,7 +390,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             return bRet;
         }
 
-        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& srcSub, CLMat& dst, float fNoiseVar, bool isSubImage)
+        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& srcSub, CLMat& dst, float fNoiseVar, int isSubImage)
         {
             LOGD("NLMDenoise++");
 #if CALCULATE_TIME
@@ -625,7 +625,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         }
 
-        bool PyramidNLM_OCL::CopyAndDePaddingImage(CLMat& src, CLMat& dst, CLMat& srcSub, int lExpandSize, bool isSubImage)
+        bool PyramidNLM_OCL::CopyAndDePaddingImage(CLMat& src, CLMat& dst, CLMat& srcSub, int lExpandSize, int isSubImage)
         {
 #if CALCULATE_TIME
             BasicTimer time;

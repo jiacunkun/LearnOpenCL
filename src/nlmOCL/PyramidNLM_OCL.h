@@ -21,7 +21,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
         private:
-            bool NLMDenoise(CLMat &src, CLMat& srcSub, CLMat& dst, float fNoiseVar, bool isSubImage);
+            bool NLMDenoise(CLMat &src, CLMat& srcSub, CLMat& dst, float fNoiseVar, int isSubImage);
 
         private:
             bool PyramidUp(CLMat &src, CLMat& dst);
@@ -32,7 +32,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             bool ImageSubImage(CLMat& srcDst, CLMat& src);
             bool ImageAddImage(CLMat& srcDst, CLMat& src);
             bool CopyAndPaddingImage(CLMat &src, CLMat& dst, int lExpandSize);
-            bool CopyAndDePaddingImage(CLMat &src, CLMat& dst, CLMat& srcSub, int lExpandSize, bool isSubImage);
+            bool CopyAndDePaddingImage(CLMat &src, CLMat& dst, CLMat& srcSub, int lExpandSize, int isSubImage);
             bool MakeWeightMap(CLMat &Table, MFloat fVar, MInt32 lMaxNum);
 
         private:

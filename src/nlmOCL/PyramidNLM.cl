@@ -48,8 +48,8 @@ kernel void PyramidDown
 	int Dst_Height
 )
 {
-#if 0
-   int idx = get_global_id(0);//dst_width
+#if 1
+    int idx = get_global_id(0)*4;//dst_width
 	int idy = get_global_id(1);
 
 	int idx_x2 = idx << 1;
@@ -66,15 +66,33 @@ kernel void PyramidDown
     global uchar* src0 = (pSrc + x_pre + y_pre * Src_Pitch);
 	global uchar* src1 = (pSrc + x_pre + y_cur * Src_Pitch);
 	global uchar* src2 = (pSrc + x_pre + y_next * Src_Pitch);
+    global uchar* dst = (pDst + idx + idy * Dst_Pitch);
 
-    short8 pre = convert_short8(vload8(0, pSrcPre));
-    short8 cur = convert_short8(vload8(0, pSrcCur));
-    short8 nex = convert_short8(vload8(0, pSrcnex));
+    short8 pre = convert_short8(vload8(0, src0));
+    short8 cur = convert_short8(vload8(0, src1));
+    short8 nex = convert_short8(vload8(0, src2));
 
-    short8 sum_ver = pre + cur * 2 + nex;
+    short8 sum_ver = pre + cur * (short8)(2) + nex;
+    short4 sum_hor = (short4)(0);
 
+    if (idx == 0)
+    {
+        sum_hor.s123 = sum_ver.s135 + (short)(2)*sum_ver.s246 + sum_ver.s357;
 
-    global uchar * pDst = pDst + mad24(y, dst_step, x);
+        short hor0 = src0[0] + src1[0]*2 + src2[0];
+        sum_hor.s0 = sum_ver.s1 + 2*sum_ver.s0 + hor0;
+    }
+    else
+    {
+        sum_hor.s012 = sum_ver.s024 + (short)(2)*sum_ver.s135 + sum_ver.s246;
+
+        short hor8 = src0[8] + src1[8]*2 + src2[8];
+        sum_hor.s3 = sum_ver.s6 + 2*sum_ver.s7 + hor8;   
+    }
+
+    sum_hor = sum_hor + (short4)(8) >> 4;
+    
+    vstore4(convert_uchar4(sum_hor), 0, dst);
 
 
 #else
