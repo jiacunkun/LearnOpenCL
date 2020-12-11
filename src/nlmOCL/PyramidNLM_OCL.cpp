@@ -193,16 +193,11 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         {
             bool bRet = true;
 
-     
-
-
             CLMat u, v;
             u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
             v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
 
-
             bRet &= SplitNV21Channel(srcUV, u, v);
-
 
             int nStep = u.stride(0);
             int nWidth = u.cols();
@@ -448,7 +443,8 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             int dst_rows = dst.rows();
 
 #if 1
-            CLMat srcPad_clmat, dstPad_clmat;
+            CLMat srcPad_clmat;
+            CLMat dstPad_clmat;
             int lExpandSize = 4;
             int srcPad_step = src_step + lExpandSize*2;
             int srcPad_cols = src_cols + lExpandSize*2;
