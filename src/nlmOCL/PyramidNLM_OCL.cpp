@@ -208,14 +208,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             CLMat m_DenoiseImg[4];
             CLMat m_TempImg[4];
             LOGD("initBuffer++");
-            for (int i = 0; i < nLayer; i++)
+            for (int i = 1; i < nLayer; i++)
             {
-                if (i != 0)
-                {
-                    m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                }
-                m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                // no need the 0 layer
+                 m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                 m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                 m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);  
             }
             LOGD("initBuffer--");
 
