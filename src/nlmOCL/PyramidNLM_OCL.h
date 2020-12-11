@@ -55,7 +55,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int m_nHeight = 0;
             int m_nStep = 0;
             bool m_bIsBlocking = true;
-            int m_nLayer = 3; //layer of pyramid
+            int m_nLayer = 4; //layer of pyramid
             int m_lExpandSize = 4;
 
         private:

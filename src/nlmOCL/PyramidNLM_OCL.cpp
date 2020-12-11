@@ -172,11 +172,13 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             for (int i = 1; i < m_nLayer; i++)
             {
                 // no need the 0 layer
-                m_YPyrDownImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
-                m_YDenoiseImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
-                m_YTempImg[i].create_with_clmem(nHeight + i >> i, nWidth + i - 1 >> i, ACV_8UC1);
-                m_YSrcImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
-                m_YDstImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
+                int newWidth = nWidth + (1 << (i - 1)) >> i;
+                int newHeight = nHeight + (1 << (i - 1)) >> i;
+                m_YPyrDownImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+                m_YDenoiseImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+                m_YTempImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+                m_YSrcImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
+                m_YDstImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
             }
             LOGD("initBuffer--");
 
@@ -210,11 +212,13 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             for (int i = 1; i < m_nLayer; i++)
             {
                 // no need the 0 layer
-                m_UVPyrDownImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
-                m_UVDenoiseImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
-                m_UVTempImg[i].create_with_clmem(nHeight + i >> i, nWidth + i>> i, ACV_8UC1);
-                m_UVSrcImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
-                m_UVDstImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
+                int newWidth = nWidth + (1 << (i - 1)) >> i;
+                int newHeight = nHeight + (1 << (i - 1)) >> i;
+                m_UVPyrDownImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+                m_UVDenoiseImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+                m_UVTempImg[i].create_with_clmem(newHeight, newWidth, ACV_8UC1);
+                m_UVSrcImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
+                m_UVDstImgPad[i].create_with_clmem((newHeight) + 2 * m_lExpandSize, (newWidth) + 2 * m_lExpandSize, ACV_8UC1);
             }
             m_UVSrcImgPad[0].create_with_clmem((nHeight) + 2 * m_lExpandSize, (nWidth) + 2 * m_lExpandSize, ACV_8UC1);
             m_UVDstImgPad[0].create_with_clmem((nHeight) + 2 * m_lExpandSize, (nWidth) + 2 * m_lExpandSize, ACV_8UC1);
@@ -460,6 +464,11 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             bRet &= kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
+
+            //Mat tmpsrc = src.map();
+            //Mat tmpdst = dst.map();
+            //src.unmap();
+            //dst.unmap();
 
 #if CALCULATE_TIME
             LOGD("%s[%d]: NLM kernel time is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
