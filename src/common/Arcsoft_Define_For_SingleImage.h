@@ -4,7 +4,7 @@
 #ifndef _DEFINE_H
 #define _DEFINE_H
 
-#define CALCULATE_TIME 1
+//#define CALCULATE_TIME 1
 
 //define namespace
 #define NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN   namespace acv { namespace ocl {

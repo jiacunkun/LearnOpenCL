@@ -4,8 +4,8 @@
 // 在Android Native ELF环境中使用log的方法，添加宏 ANDROIDELF
 
 #ifndef LOG_TAG
-//#define DISABLE_LOG
-#define LOG_TAG "Arcsoft"
+#define DISABLE_LOG
+//#define LOG_TAG "Arcsoft"
 #endif
 
 ////////////////////////关闭log//////////////////////////////////////////////
