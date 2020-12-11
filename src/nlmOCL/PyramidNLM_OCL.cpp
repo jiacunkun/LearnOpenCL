@@ -7,6 +7,8 @@
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
+static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
+
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
             LOGD("PyramidNLM_OCL()");
@@ -153,7 +155,35 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             bool bRet = true;
 
-            bRet &= run(srcY, dstY, fNoiseVarY, false);
+            // init map
+            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
+            //}
+            //else
+            {
+                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
+            }
+
+            int nStep = srcY.stride(0);
+            int nWidth = srcY.cols();
+            int nHeight = srcY.rows();
+
+            // new blank memory
+            CLMat m_PyrDownImg[4];
+            CLMat m_DenoiseImg[4];
+            CLMat m_TempImg[4];
+            LOGD("initBuffer++");
+            for (int i = 1; i < m_nLayer; i++)
+            {
+                // no need the 0 layer
+                m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+            }
+            LOGD("initBuffer--");
+
+            bRet &= run(srcY, dstY, fNoiseVarY, false, m_PyrDownImg, m_DenoiseImg, m_TempImg);
 
             return bRet;
         }
@@ -162,6 +192,17 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         {
             bool bRet = true;
 
+            // init map
+            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
+            //{
+            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
+            //}
+            //else
+            {
+                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
+            }
+
+
             CLMat u, v;
             u.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
             v.create_with_clmem(srcUV.height(), srcUV.width() / 2, ACV_8UC1);
@@ -169,8 +210,28 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             bRet &= SplitNV21Channel(srcUV, u, v);
 
-            bRet &= run(u, u, fNoiseVarUV, true);
-            bRet &= run(v, v, fNoiseVarUV, true);
+
+            int nStep = u.stride(0);
+            int nWidth = u.cols();
+            int nHeight = u.rows();
+
+            // new blank memory
+            CLMat m_PyrDownImg[4];
+            CLMat m_DenoiseImg[4];
+            CLMat m_TempImg[4];
+            LOGD("initBuffer++");
+            for (int i = 1; i < m_nLayer; i++)
+            {
+                // no need the 0 layer
+                m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+            }
+            LOGD("initBuffer--");
+
+
+            bRet &= run(u, u, fNoiseVarUV, true, m_PyrDownImg, m_DenoiseImg, m_TempImg);
+            bRet &= run(v, v, fNoiseVarUV, true, m_PyrDownImg, m_DenoiseImg, m_TempImg);
 
             //Mat tmpSrc = u.map();
             //Mat tmpDst = u_dst.map();
@@ -188,49 +249,23 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
         }
 
 
-        bool PyramidNLM_OCL::run(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0)
+        bool PyramidNLM_OCL::run(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0, CLMat m_PyrDownImg[], CLMat m_DenoiseImg[], CLMat m_TempImg[])
         {
             LOGD("PyramidNLM_OCL::run++");
 #if CALCULATE_TIME
             BasicTimer time;
 #endif
-            MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
+           
             bool bRet = true;
 
             int nStep = src.stride(0);
             int nWidth = src.cols();
             int nHeight = src.rows();
-            int nLayer = 3; //layer of pyramid
-
-            // init map
-            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
-            //{
-            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //}
-            //else
-            {
-                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
-            }
-
-            // new blank memory
-            CLMat m_PyrDownImg[4];
-            CLMat m_DenoiseImg[4];
-            CLMat m_TempImg[4];
-            LOGD("initBuffer++");
-            for (int i = 1; i < nLayer; i++)
-            {
-                // no need the 0 layer
-                 m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                 m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                 m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);  
-            }
-            LOGD("initBuffer--");
-
-
+           
             // build pyramid
             m_PyrDownImg[0] = src;
 
-            for (int i = 0; i < nLayer - 1; i++)
+            for (int i = 0; i < m_nLayer - 1; i++)
             {
                 PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i + 1]);
                 //PyramidUp(m_PyrDownImg[i + 1], m_PyrDownImg[i]);
@@ -238,7 +273,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             }
 
             // denoise from small layer to large layer
-            for (int i = nLayer - 1; i > 0; i--)
+            for (int i = m_nLayer - 1; i > 0; i--)
             {
                 float fTmpVar = fNoiseVar * fPow[i];;
                 fTmpVar = MAX(1.0f, fTmpVar);

@@ -17,7 +17,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             virtual bool create(const CLContext& context, ProgramSourceType type);
             void initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
-            bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0);
+            bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0, CLMat m_PyrDownImg[], CLMat m_DenoiseImg[], CLMat m_TempImg[]);
             bool runY(CLMat& srcY, CLMat& dstY, float fNoiseVarY);
             bool runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
@@ -55,6 +55,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int m_nHeight = 0;
             int m_nStep = 0;
             bool m_bIsBlocking = true;
+            int m_nLayer = 3; //layer of pyramid
 
         private:
             // NLM降噪查表数据
