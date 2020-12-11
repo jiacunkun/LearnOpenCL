@@ -58,7 +58,6 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int m_nLayer = 3; //layer of pyramid
 
         private:
-            // NLM降噪查表数据
             CLMat map_clmat;
             MFloat m_fNoiseVar = -1;
         };

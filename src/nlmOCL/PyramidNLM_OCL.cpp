@@ -12,15 +12,9 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         PyramidNLM_OCL::PyramidNLM_OCL()
         {
             LOGD("PyramidNLM_OCL()");
-            // init map
-            //if (map_clmat.is_svm_available()) // an eample to use SVM buffer
-            //{
-            //	map_clmat.create_with_svm(1, 16*50, ACV_32SC1);
-            //}
-            //else
-            {
-                map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
-            }
+            
+            map_clmat.create_with_clmem(1, 16 * 50, ACV_32SC1);
+            
         }
 
         PyramidNLM_OCL::~PyramidNLM_OCL()
@@ -444,7 +438,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 
 #if 1
             CLMat srcPad_clmat;
-            CLMat dstPad_clmat;
+            //CLMat dstPad_clmat;
             int lExpandSize = 4;
             int srcPad_step = src_step + lExpandSize*2;
             int srcPad_cols = src_cols + lExpandSize*2;
@@ -452,8 +446,9 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             int dstPad_step = dst_step + lExpandSize*2;
             int dstPad_cols = dst_cols + lExpandSize*2;
             int dstPad_rows = dst_rows + lExpandSize*2;
+           
             srcPad_clmat.create_with_clmem(srcPad_rows, srcPad_step, ACV_8UC1);
-            dstPad_clmat.create_with_clmem(dstPad_rows, dstPad_step, ACV_8UC1);
+            //dstPad_clmat.create_with_clmem(dstPad_rows, dstPad_step, ACV_8UC1);
 
             bRet &= CopyAndPaddingImage(src, srcPad_clmat, lExpandSize);
 
@@ -464,7 +459,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 #endif
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
-            kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, dstPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat); // set argument
+            kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, srcPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat); // set argument
             size_t global_size[] = { (size_t)(dstPad_cols +3>>2), (size_t)(dstPad_rows +3>>2) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
@@ -481,7 +476,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 #endif
 
 #if 1
-            bRet &= CopyAndDePaddingImage(dstPad_clmat, dst, srcSub, lExpandSize, isSubImage);
+            bRet &= CopyAndDePaddingImage(srcPad_clmat, dst, srcSub, lExpandSize, isSubImage);
 
             //Mat tmpsrc1 = dstPad_clmat.map();
             //Mat tmpdst1 = dst.map();
