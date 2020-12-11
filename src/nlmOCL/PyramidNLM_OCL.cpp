@@ -154,36 +154,39 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 
 		}
 
-        bool PyramidNLM_OCL::runY(CLMat& srcY, CLMat& dstY, float fNoiseVarY)
+        bool PyramidNLM_OCL::runY(MHandle handle, CLMat& srcY, CLMat& dstY, float fNoiseVarY)
         {
             bool bRet = true;
-
-         
 
             int nStep = srcY.stride(0);
             int nWidth = srcY.cols();
             int nHeight = srcY.rows();
 
             // new blank memory
-            CLMat m_PyrDownImg[4];
-            CLMat m_DenoiseImg[4];
-            CLMat m_TempImg[4];
+            CLMat m_YPyrDownImg[4];
+            CLMat m_YDenoiseImg[4];
+            CLMat m_YTempImg[4];
+            CLMat m_YSrcImgPad[4];
+            CLMat m_YDstImgPad[4];
             LOGD("initBuffer++");
             for (int i = 1; i < m_nLayer; i++)
             {
                 // no need the 0 layer
-                m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_YPyrDownImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
+                m_YDenoiseImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
+                m_YTempImg[i].create_with_clmem(nHeight + i >> i, nWidth + i - 1 >> i, ACV_8UC1);
+                m_YSrcImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
+                m_YDstImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
             }
             LOGD("initBuffer--");
 
-            bRet &= run(srcY, dstY, fNoiseVarY, false, m_PyrDownImg, m_DenoiseImg, m_TempImg);
+            // run
+            bRet &= run(srcY, dstY, fNoiseVarY, false, m_YPyrDownImg, m_YDenoiseImg, m_YTempImg, m_YSrcImgPad, m_YDstImgPad);
 
             return bRet;
         }
 
-        bool PyramidNLM_OCL::runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
+        bool PyramidNLM_OCL::runUV(MHandle handle, CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
         {
             bool bRet = true;
 
@@ -198,22 +201,28 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             int nHeight = u.rows();
 
             // new blank memory
-            CLMat m_PyrDownImg[4];
-            CLMat m_DenoiseImg[4];
-            CLMat m_TempImg[4];
+            CLMat m_UVPyrDownImg[4];
+            CLMat m_UVDenoiseImg[4];
+            CLMat m_UVTempImg[4];
+            CLMat m_UVSrcImgPad[4];
+            CLMat m_UVDstImgPad[4];
             LOGD("initBuffer++");
             for (int i = 1; i < m_nLayer; i++)
             {
                 // no need the 0 layer
-                m_PyrDownImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                m_DenoiseImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
-                m_TempImg[i].create_with_clmem(nHeight >> i, nWidth >> i, ACV_8UC1);
+                m_UVPyrDownImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
+                m_UVDenoiseImg[i].create_with_clmem(nHeight + i >> i, nWidth + i >> i, ACV_8UC1);
+                m_UVTempImg[i].create_with_clmem(nHeight + i >> i, nWidth + i>> i, ACV_8UC1);
+                m_UVSrcImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
+                m_UVDstImgPad[i].create_with_clmem((nHeight + i >> i) + 2 * m_lExpandSize, (nWidth + i >> i) + 2 * m_lExpandSize, ACV_8UC1);
             }
+            m_UVSrcImgPad[0].create_with_clmem((nHeight) + 2 * m_lExpandSize, (nWidth) + 2 * m_lExpandSize, ACV_8UC1);
+            m_UVDstImgPad[0].create_with_clmem((nHeight) + 2 * m_lExpandSize, (nWidth) + 2 * m_lExpandSize, ACV_8UC1);
             LOGD("initBuffer--");
 
 
-            bRet &= run(u, u, fNoiseVarUV, true, m_PyrDownImg, m_DenoiseImg, m_TempImg);
-            bRet &= run(v, v, fNoiseVarUV, true, m_PyrDownImg, m_DenoiseImg, m_TempImg);
+            bRet &= run(u, u, fNoiseVarUV, true, m_UVPyrDownImg, m_UVDenoiseImg, m_UVTempImg, m_UVSrcImgPad, m_UVDstImgPad);
+            bRet &= run(v, v, fNoiseVarUV, true, m_UVPyrDownImg, m_UVDenoiseImg, m_UVTempImg, m_UVSrcImgPad, m_UVDstImgPad);
 
             //Mat tmpSrc = u.map();
             //Mat tmpDst = u_dst.map();
@@ -231,7 +240,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
         }
 
 
-        bool PyramidNLM_OCL::run(CLMat& src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0, CLMat m_PyrDownImg[], CLMat m_DenoiseImg[], CLMat m_TempImg[])
+        bool PyramidNLM_OCL::run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0, CLMat PyrDownImg[], CLMat DenoiseImg[], CLMat TempImg[], CLMat SrcImgPad[], CLMat DstImgPad[])
         {
             LOGD("PyramidNLM_OCL::run++");
 #if CALCULATE_TIME
@@ -245,13 +254,13 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             int nHeight = src.rows();
            
             // build pyramid
-            m_PyrDownImg[0] = src;
+            PyrDownImg[0] = src;
 
             for (int i = 0; i < m_nLayer - 1; i++)
             {
-                PyramidDown(m_PyrDownImg[i], m_PyrDownImg[i + 1]);
+                PyramidDown(PyrDownImg[i], PyrDownImg[i + 1]);
                 //PyramidUp(m_PyrDownImg[i + 1], m_PyrDownImg[i]);
-                m_PyrDownImg[i + 1].copyTo(m_TempImg[i + 1]);
+                PyrDownImg[i + 1].copyTo(TempImg[i + 1]);
             }
 
             // denoise from small layer to large layer
@@ -260,9 +269,14 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
                 float fTmpVar = fNoiseVar * fPow[i];;
                 fTmpVar = MAX(1.0f, fTmpVar);
 
-                bRet = NLMDenoise(m_PyrDownImg[i], m_TempImg[i], m_DenoiseImg[i], fTmpVar, 1);
+
+                // padding , denoise, depadding
+                bRet &= CopyAndPaddingImage(PyrDownImg[i], SrcImgPad[i], m_lExpandSize);
+                bRet &= NLMDenoise(SrcImgPad[i], DstImgPad[i], fTmpVar);
+                bRet &= CopyAndDePaddingImage(DstImgPad[i], DenoiseImg[i], TempImg[i], m_lExpandSize, 1);
+
                 //bRet &= ImageSubImage(m_DenoiseImg[i], m_TempImg[i]);
-                bRet &= PyramidUp(m_DenoiseImg[i], m_PyrDownImg[i - 1]);
+                bRet &= PyramidUp(DenoiseImg[i], PyrDownImg[i - 1]);
                 //bRet &= ImageAddImage(m_PyrDownImg[i - 1], m_DenoiseImg[i - 1]);
             }
 
@@ -274,7 +288,10 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
                     float fTmpVar = fNoiseVar * fPow[i];;
                     fTmpVar = MAX(1.0f, fTmpVar);
 
-                    bRet &= NLMDenoise(m_PyrDownImg[i], m_PyrDownImg[i], dst, fTmpVar, 0);
+                    // padding , denoise, depadding
+                    bRet &= CopyAndPaddingImage(PyrDownImg[i], SrcImgPad[i], m_lExpandSize);
+                    bRet &= NLMDenoise(SrcImgPad[i], DstImgPad[i], fTmpVar);
+                    bRet &= CopyAndDePaddingImage(DstImgPad[i], dst, TempImg[i], m_lExpandSize, 0);
                     //m_DenoiseImg[0].copyTo(dst);// copy result to output
                 }
                 // becase of src is same dst, so delete it
@@ -418,11 +435,10 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             return bRet;
         }
 
-        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& srcSub, CLMat& dst, float fNoiseVar, int isSubImage)
+        bool PyramidNLM_OCL::NLMDenoise(CLMat& src, CLMat& dst, float fNoiseVar)
         {
             LOGD("NLMDenoise++");
 #if CALCULATE_TIME
-            BasicTimer time0;
             BasicTimer time;
 #endif
             bool bRet = true;
@@ -436,56 +452,17 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
             int dst_cols = dst.cols();
             int dst_rows = dst.rows();
 
-#if 1
-            CLMat srcPad_clmat;
-            //CLMat dstPad_clmat;
-            int lExpandSize = 4;
-            int srcPad_step = src_step + lExpandSize*2;
-            int srcPad_cols = src_cols + lExpandSize*2;
-            int srcPad_rows = src_rows + lExpandSize*2;
-            int dstPad_step = dst_step + lExpandSize*2;
-            int dstPad_cols = dst_cols + lExpandSize*2;
-            int dstPad_rows = dst_rows + lExpandSize*2;
-           
-            srcPad_clmat.create_with_clmem(srcPad_rows, srcPad_step, ACV_8UC1);
-            //dstPad_clmat.create_with_clmem(dstPad_rows, dstPad_step, ACV_8UC1);
-
-            bRet &= CopyAndPaddingImage(src, srcPad_clmat, lExpandSize);
-
-            //Mat tmpsrc = src.map();
-            //Mat tmpdst = srcPad_clmat.map();
-            //src.unmap();
-            //srcPad_clmat.unmap();
-#endif
 
             CLKernel& kernel = getKernelOfNLMDenoise(0);
-            kernel.Args(srcPad_clmat, srcPad_step, srcPad_cols, srcPad_rows, srcPad_clmat, dstPad_step, dstPad_cols, dstPad_rows, map_clmat); // set argument
-            size_t global_size[] = { (size_t)(dstPad_cols +3>>2), (size_t)(dstPad_rows +3>>2) }; // set global size
+            kernel.Args(src, src_step, src_cols, src_rows, dst, dst_step, dst_cols, dst_rows, map_clmat); // set argument
+            size_t global_size[] = { (size_t)(dst_cols +3>>2), (size_t)(dst_rows +3>>2) }; // set global size
             //size_t local_size[] = { set_the_local_size_here_since_they_are_not_set_in_the_kernel_difinition };
             size_t* local_size = nullptr;
             cl_uint dims = 2;
             bRet &= kernel.run(dims, global_size, local_size, m_bIsBlocking); // run the kernel
 
-            //Mat tmpsrc1 = dstPad_clmat.map();
-            //Mat tmpdst1 = srcPad_clmat.map();
-            //dstPad_clmat.unmap();
-            //srcPad_clmat.unmap();
-
 #if CALCULATE_TIME
             LOGD("%s[%d]: NLM kernel time is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
-#endif
-
-#if 1
-            bRet &= CopyAndDePaddingImage(srcPad_clmat, dst, srcSub, lExpandSize, isSubImage);
-
-            //Mat tmpsrc1 = dstPad_clmat.map();
-            //Mat tmpdst1 = dst.map();
-            //dstPad_clmat.unmap();
-            //dst.unmap();
-#endif
-
-#if CALCULATE_TIME
-            LOGD("%s[%d]: is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time0.UpdateAndGetDelta());
 #endif
 
             LOGD("NLMDenoise--");
@@ -689,7 +666,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 
         }
 
-        bool runYPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar)
+        bool runYPyramidNLM_OCL(MHandle handle, CLMat& src, CLMat& dst, float fNoiseVar)
         {
             if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
             {
@@ -698,11 +675,11 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 
             }
 
-            return GPyramidNLM_OCLRetriever::get().runY(src, dst, fNoiseVar);
+            return GPyramidNLM_OCLRetriever::get().runY(handle, src, dst, fNoiseVar);
 
         }
 
-        bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
+        bool runUVPyramidNLM_OCL(MHandle handle, CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV)
         {
             if (GPyramidNLM_OCLRetriever::getPtr() == nullptr)
             {
@@ -711,7 +688,7 @@ static MFloat fPow[] = { 1.0, 0.5, 0.25, 0.125, 0.0625 };
 
             }
 
-            return GPyramidNLM_OCLRetriever::get().runUV(srcUV, dstUV, fNoiseVarUV);
+            return GPyramidNLM_OCLRetriever::get().runUV(handle, srcUV, dstUV, fNoiseVarUV);
         }
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END

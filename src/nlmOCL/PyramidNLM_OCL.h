@@ -17,12 +17,12 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
             virtual bool create(const CLContext& context, ProgramSourceType type);
             void initBuffer(int nWidth, int nHeight, int nStep, int nLayer);
-            bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0, CLMat m_PyrDownImg[], CLMat m_DenoiseImg[], CLMat m_TempImg[]);
-            bool runY(CLMat& srcY, CLMat& dstY, float fNoiseVarY);
-            bool runUV(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
+            bool run(CLMat &src, CLMat& dst, float fNoiseVar, bool bIsDenoiseFor0, CLMat PyrDownImg[], CLMat DenoiseImg[], CLMat TempImg[], CLMat SrcImgPad[], CLMat DstImgPad[]);
+            bool runY(MHandle handle, CLMat& srcY, CLMat& dstY, float fNoiseVarY);
+            bool runUV(MHandle handle, CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
         private:
-            bool NLMDenoise(CLMat &src, CLMat& srcSub, CLMat& dst, float fNoiseVar, int isSubImage);
+            bool NLMDenoise(CLMat &src, CLMat& dst, float fNoiseVar);
 
         private:
             bool PyramidUp(CLMat &src, CLMat& dst);
@@ -56,6 +56,7 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
             int m_nStep = 0;
             bool m_bIsBlocking = true;
             int m_nLayer = 3; //layer of pyramid
+            int m_lExpandSize = 4;
 
         private:
             CLMat map_clmat;
@@ -64,8 +65,8 @@ NS_SINFLE_IMAGE_ENHANCEMENT_OCL_BEGIN
 
         using GPyramidNLM_OCLRetriever = GlobalKernelRetriver<PyramidNLM_OCL>; // 加载封装的OCL类
 
-        bool runYPyramidNLM_OCL(CLMat& src, CLMat& dst, float fNoiseVar);
-        bool runUVPyramidNLM_OCL(CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
+        bool runYPyramidNLM_OCL(MHandle handle, CLMat& src, CLMat& dst, float fNoiseVar);
+        bool runUVPyramidNLM_OCL(MHandle handle, CLMat& srcUV, CLMat& dstUV, float fNoiseVarUV);
 
 
 NS_SINFLE_IMAGE_ENHANCEMENT_OCL_END

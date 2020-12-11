@@ -12,7 +12,7 @@ USING_NS_SINFLE_IMAGE_ENHANCEMENT
 static bool g_is_initialized = false;
 static arc_example::ocl::OCLInitilizerExample g_ocl_initializer; // init env handle
 
-static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 1.2.2!\n";
+static const char gVersionString[] = "Arcsoft PyramidNLM OCL version is 1.7.2!\n";
 
 MInt32 PyramidNLM_OCL_Init()
 {
@@ -86,12 +86,13 @@ MInt32 PyramidNLM_OCL_Handle(MHandle handle, LPASVLOFFSCREEN pSrc, LPASVLOFFSCRE
         lRet &= uv_clmat.copyFrom(uv_mat);
 
         // run GPU
+        for (int i = 0; i < 1; i++)
         {
 #if CALCULATE_TIME
             BasicTimer time;
 #endif
-            lRet &= runUVPyramidNLM_OCL(uv_clmat, uv_clmat, fNoiseVarUV);
-            lRet &= runYPyramidNLM_OCL(y_clmat, y_clmat, fNoiseVarY);
+            lRet &= runUVPyramidNLM_OCL(handle, uv_clmat, uv_clmat, fNoiseVarUV);
+            lRet &= runYPyramidNLM_OCL(handle, y_clmat, y_clmat, fNoiseVarY);
 #if CALCULATE_TIME
             LOGD("%s[%d]: run NLM is finished timer count = %fms!\n", __FUNCTION__, __LINE__, time.UpdateAndGetDelta());
 #endif
