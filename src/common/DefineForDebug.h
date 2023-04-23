@@ -1,0 +1,129 @@
+#ifndef CHEESE_DEFINEFORDEBUG_H
+#define CHEESE_DEFINEFORDEBUG_H
+
+#include "single_image_enhancement_define.h"
+
+// DefineForDebugPath定义工程路径，由cmake定义，这里可以手动定义
+#define DebugPath  "E:/svn/SingleImageEnhancement"
+
+#if defined(_DEBUG)
+#ifdef DEBUG_OUTPUT
+#define BUILD_OPENCV
+#endif
+#endif
+
+#if defined(BUILD_OPENCV)
+#include "opencv2/opencv.hpp"
+#endif
+
+
+/****************************************************************************************\
+                            IMAGE_PATH
+\****************************************************************************************/
+// IMAGE_PATH
+#if defined(PLATFORM_IOS) //ios
+#define IMAGE_PATH(image) std::string(image)
+#define IMAGE_PATH_OUT(image) std::string(image)
+#elif defined(PLATFORM_ANDROIDELF) // android ELF
+#define IMAGE_PATH(image) (std::string("/data/local/tmp/test/images/") + std::string(image))
+#define IMAGE_PATH_OUT(image) (std::string("/data/local/tmp/test/images/out/") + std::string(image))
+#elif defined(PLATFORM_MAC) //mac
+#define IMAGE_PATH(image) (std::string((DebugPath)) + std::string("/images/") + std::string(image))
+#define IMAGE_PATH_OUT(image) (std::string(DebugPath) + std::string("/images/out/") + std::string(image))
+#else
+#define IMAGE_PATH(image) (std::string((DebugPath)) + std::string("/images/middleResult/") + std::string(image))
+#define IMAGE_PATH_OUT(image) (std::string(DebugPath) + std::string("/images/middleResult/") + std::string(image))
+#endif
+
+
+
+
+
+/****************************************************************************************\
+                            IMAGE_WRITE
+\****************************************************************************************/
+#ifdef BUILD_OPENCV
+    #if defined(PLATFORM_IOS)
+        void im_write_(std::string path_name, cv::Mat mat);
+        #define im_write(path_name, mat) im_write_(path_name, mat);
+    #else
+        #define im_write(path_name, mat) \
+        { \
+            printf("save image %s\n", IMAGE_PATH_OUT(path_name).c_str()); \
+            cv::imwrite(IMAGE_PATH_OUT(path_name), mat); \
+        }
+    #endif
+
+    #define im_write_normalize(path_name, mat) \
+    {\
+        cv::Mat out = mat.clone(); \
+        cv::normalize(mat, out, 255.0, 0.0, cv::NORM_MINMAX); \
+        im_write(path_name, out );\
+    }
+
+
+    #define mat_write(h, w, type, p, path_name) \
+    {\
+        cv::Mat im(h, w, type, p);\
+        im_write(path_name, im);\
+    }
+
+    #define mat_write255(h, w, type, p, path_name, ratio) \
+    {\
+        cv::Mat im(h, w, type, p);\
+        im_write(path_name, im * ratio);\
+    }
+
+    #define mat_write_normalize(h, w, type, p, path_name) \
+    {\
+        cv::Mat im(h, w, type, p);\
+        cv::Mat out; \
+        cv::normalize(im, out, 1.0, 0.0, cv::NORM_MINMAX); \
+        im_write(path_name, im );\
+    }
+
+
+#else
+
+    #define im_write(path_name, mat)
+    #define im_write_normalize(path_name, mat)
+    #define mat_write(h, w, type, p, path_name)
+    #define mat_write255(h, w, type, p, path_name, ratio)
+    #define mat_write_normalize(h, w, type, p, path_name)
+
+#endif
+
+
+
+/****************************************************************************************\
+                            IMAGE_READ
+\****************************************************************************************/
+#if defined(BUILD_OPENCV) && defined(PLATFORM_IOS)
+
+    cv::Mat im_imread(std::string name, int flags = 1, std::string sBundleName = "images.bundle");
+
+#elif defined(BUILD_OPENCV)
+
+
+    static cv::Mat im_imread(std::string name, int flags = 1)
+    {
+        cv::Mat img = cv::imread(IMAGE_PATH(name), flags);
+        if( img.empty() )
+        {
+            printf("read image failed! %s\n", IMAGE_PATH(name).c_str());
+            // LOGE("read image failed! name = %s", name.c_str());
+        }
+        return img;
+    }
+
+
+#else
+    // 不应该走到这个分支
+
+#endif
+
+
+
+
+
+#endif //CHEESE_DEFINEFORDEBUG_H

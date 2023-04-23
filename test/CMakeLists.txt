@@ -1,21 +1,53 @@
-# opencv module
-find_package(OpenCV)
-#或者find_package(OpenCV3)
-include_directories(${OpenCV_INCLUDE_DIRS})
+# ./test/CMakeLists.txt
+include("${CMAKE_SOURCE_DIR}/cmake/libmobilecv-config.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/libmpbase-config.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/libyuv-config.cmake")
 
-# opencl module
-find_package(OpenCL REQUIRED)
-include_directories(${OPENCL_INCLUDE_DIRS})
+if(ANDROID)
+    include("${CMAKE_SOURCE_DIR}/cmake/libopencv-config.cmake")
+else()
+    #OpenCV
+    find_package(OpenCV REQUIRED)
+    add_definitions(-DDEBUG_OUTPUT)
+    add_definitions(-DBUILD_OPENCV)
+endif()
 
-message(STATUS "OpenCL found: ${OPENCL_FOUND}")
-message(STATUS "OpenCL includes: ${OPENCL_INCLUDE_DIRS}")
-message(STATUS "OpenCL CXX includes: ${OPENCL_HAS_CPP_BINDINGS}")
-message(STATUS "OpenCL libraries: ${OPENCL_LIBRARIES}")
+# 搜索路径中加入接口头文件路径
+include_directories(
+        ${LIBRARY_INCLUDE_DIRS}
+        ${OpenCV_INCLUDE_DIRS}
+        ${libyuv_INCLUDE_DIRS}
+        ${libmobilecv_INCLUDE_DIRS}
+        ${libmpbase_INCLUDE_DIRS}
+        ${libsegmentation_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/src/common
+        ${CMAKE_SOURCE_DIR}/src/common/win
+        ${CMAKE_SOURCE_DIR}/src/utils
+        ${CMAKE_SOURCE_DIR}/src/utils/imgResize
+        ${CMAKE_SOURCE_DIR}/src/pyramidBuild/
+        ${CMAKE_SOURCE_DIR}/src/guideFilter/
+        ${CMAKE_SOURCE_DIR}/src/wavelet/
+        ${CMAKE_SOURCE_DIR}/src/anisGuidePyrFilter/
+        ${CMAKE_SOURCE_DIR}/src/anisotropicPyrFilter/
+        ${CMAKE_SOURCE_DIR}/src/pryDenoiseNLM/
+        ${CMAKE_SOURCE_DIR}/src/wavelet/
+        ${CMAKE_SOURCE_DIR}/src/utils/imgFilter/
+        ${CMAKE_SOURCE_DIR}/src/
+        ${CMAKE_SOURCE_DIR}/src/sse_nlm/
+        ${CMAKE_SOURCE_DIR}/src/edgeFilter/
+)
 
-set(CMAKE_CXX_STANDARD 11)
+file(GLOB MAIN_DIR   ./tested.cpp)
 
-include_directories(src/MTCLWrapper/include)
-set(src_files
-        test/main.cpp ImgProc.cpp ImgProc.h)
-add_executable(oclDemo ${src_files})
-target_link_libraries(oclDemo ${OpenCV_LIBS} ${OpenCL_LIBRARY})
+
+add_executable(test_sfnr ${MAIN_DIR})
+# 链接我们的算法库
+target_link_libraries(test_sfnr
+        ${LIBRARY_NAME}
+        ${OpenCV_LIBS}
+        ${libyuv_LIBS}
+        ${libmobilecv_LIBS}
+        ${libmpbase_LIBS}
+        )
+
+
